@@ -7,6 +7,11 @@ import AnalyzerHero from '@/components/AnalyzerHero';
 import AnalyzerLoading from '@/components/AnalyzerLoading';
 import AnalyzerResults from '@/components/AnalyzerResults';
 
+function isSelfAnalysis(input: string): boolean {
+  const normalized = input.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '');
+  return ['swissalytics.com', 'swissalytics.ch', 'swissalytics.jcloud.ik-server.com'].includes(normalized);
+}
+
 export default function HomePage() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,6 +19,7 @@ export default function HomePage() {
   const [error, setError] = useState('');
   const [loadingStep, setLoadingStep] = useState(0);
   const [cwvLoading, setCwvLoading] = useState(false);
+  const [easterEgg, setEasterEgg] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +34,17 @@ export default function HomePage() {
       validatedUrl = 'https://' + validatedUrl;
     }
 
+    if (isSelfAnalysis(validatedUrl)) {
+      setEasterEgg(true);
+      setResult(null);
+      setError('');
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+      return;
+    }
+
+    setEasterEgg(false);
     setLoading(true);
     setError('');
     setResult(null);
@@ -133,6 +150,37 @@ export default function HomePage() {
         {loading && (
           <section ref={loadingRef} className="container mx-auto px-4 py-12 scroll-mt-24">
             <AnalyzerLoading step={loadingStep} />
+          </section>
+        )}
+
+        {easterEgg && (
+          <section ref={resultsRef} className="container mx-auto px-4 py-16 scroll-mt-24">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-3xl p-12 shadow-lg">
+                <div className="text-7xl mb-6">&#129302;</div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  Bien joue, on se connait deja !
+                </h2>
+                <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                  Vous essayez d&apos;analyser Swissalytics... avec Swissalytics ?
+                  <br />
+                  C&apos;est comme se regarder dans un miroir qui vous note.
+                </p>
+                <div className="inline-flex items-center gap-3 bg-white border border-blue-200 rounded-2xl px-8 py-4 mb-8">
+                  <span className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">&infin;</span>
+                  <span className="text-lg text-gray-500">/100</span>
+                </div>
+                <p className="text-sm text-gray-400 italic">
+                  Score : incalculable. On ne peut pas etre juge et partie.
+                </p>
+                <button
+                  onClick={() => { setEasterEgg(false); setUrl(''); }}
+                  className="mt-8 px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  Analyser un autre site
+                </button>
+              </div>
+            </div>
           </section>
         )}
 
