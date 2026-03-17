@@ -15,7 +15,7 @@ export default function CTABanner({ variant = 'inline', onExport }: CTABannerPro
           Besoin d&apos;un audit approfondi avec des recommandations sur mesure ?
         </p>
         <a
-          href="https://swissalytics.com/contact"
+          href="https://pixelab.ch/contact"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-text text-sm font-semibold rounded-lg hover:bg-accent-hover transition-colors whitespace-nowrap"
@@ -37,7 +37,7 @@ export default function CTABanner({ variant = 'inline', onExport }: CTABannerPro
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <a
-          href="https://swissalytics.com/contact"
+          href="https://pixelab.ch/contact"
           target="_blank"
           rel="noopener noreferrer"
           className="px-6 py-3 bg-accent text-accent-text font-bold rounded-lg hover:bg-accent-hover transition-colors flex items-center justify-center gap-2"

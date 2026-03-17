@@ -194,7 +194,7 @@ export default function HomePage() {
         <footer className="border-t border-gray-200 py-8 mt-16">
           <div className="container mx-auto px-4 text-center text-sm text-gray-500">
             <p>Swissalytics &mdash; Analyse SEO &amp; AI Search gratuite</p>
-            <p className="mt-1">100% h&eacute;berg&eacute; en Suisse</p>
+            <p className="mt-1">100% h&eacute;berg&eacute; en Suisse &middot; Propuls&eacute; par <a href="https://pixelab.ch" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Pixelab</a></p>
           </div>
         </footer>
       </main>
