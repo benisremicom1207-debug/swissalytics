@@ -111,23 +111,23 @@ export default function HomePage() {
       const raw = err instanceof Error ? err.message : '';
       let errorMessage: string;
       if (raw.includes('ENOTFOUND') || raw.includes('getaddrinfo')) {
-        errorMessage = 'Site introuvable. Verifiez l\'adresse et reessayez.';
+        errorMessage = 'Site introuvable. V\u00e9rifiez l\'adresse et r\u00e9essayez.';
       } else if (raw.includes('ECONNREFUSED')) {
-        errorMessage = 'Connexion refusee par le serveur. Le site est peut-etre hors ligne.';
+        errorMessage = 'Connexion refus\u00e9e par le serveur. Le site est peut-\u00eatre hors ligne.';
       } else if (raw.includes('ECONNRESET') || raw.includes('socket hang up')) {
-        errorMessage = 'La connexion a ete interrompue. Reessayez dans quelques instants.';
+        errorMessage = 'La connexion a \u00e9t\u00e9 interrompue. R\u00e9essayez dans quelques instants.';
       } else if (raw.includes('ETIMEDOUT') || raw.includes('Timeout')) {
-        errorMessage = 'Le site met trop de temps a repondre. Reessayez plus tard.';
+        errorMessage = 'Le site met trop de temps \u00e0 r\u00e9pondre. R\u00e9essayez plus tard.';
       } else if (raw.includes('CERT_') || raw.includes('certificate') || raw.includes('SSL')) {
-        errorMessage = 'Erreur de certificat SSL. Le site a un probleme de securite.';
+        errorMessage = 'Erreur de certificat SSL. Le site a un probl\u00e8me de s\u00e9curit\u00e9.';
       } else if (raw.includes('URL invalide') || raw.includes('Invalid URL')) {
-        errorMessage = 'L\'URL saisie n\'est pas valide. Verifiez la syntaxe (ex : monsite.ch).';
+        errorMessage = 'L\'URL saisie n\'est pas valide. V\u00e9rifiez la syntaxe (ex : monsite.ch).';
       } else if (raw.includes('HTTP 4') || raw.includes('HTTP 5')) {
-        errorMessage = `Le site a repondu avec une erreur (${raw}). Verifiez que la page existe.`;
+        errorMessage = `Le site a r\u00e9pondu avec une erreur (${raw}). V\u00e9rifiez que la page existe.`;
       } else if (raw) {
         errorMessage = `Impossible d'analyser ce site. ${raw}`;
       } else {
-        errorMessage = 'Une erreur est survenue. Veuillez reessayer.';
+        errorMessage = 'Une erreur est survenue. Veuillez r\u00e9essayer.';
       }
       setError(errorMessage);
     } finally {
@@ -159,7 +159,7 @@ export default function HomePage() {
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-3xl p-12 shadow-lg">
                 <div className="text-7xl mb-6">&#129302;</div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                  Bien joue, on se connait deja !
+                  Bien jou&eacute;, on se conna&icirc;t d&eacute;j&agrave; !
                 </h2>
                 <p className="text-lg text-gray-600 mb-6 leading-relaxed">
                   Vous essayez d&apos;analyser Swissalytics... avec Swissalytics ?
@@ -171,7 +171,7 @@ export default function HomePage() {
                   <span className="text-lg text-gray-500">/100</span>
                 </div>
                 <p className="text-sm text-gray-400 italic">
-                  Score : incalculable. On ne peut pas etre juge et partie.
+                  Score : incalculable. On ne peut pas &ecirc;tre juge et partie.
                 </p>
                 <button
                   onClick={() => { setEasterEgg(false); setUrl(''); }}
@@ -194,7 +194,7 @@ export default function HomePage() {
         <footer className="border-t border-gray-200 py-8 mt-16">
           <div className="container mx-auto px-4 text-center text-sm text-gray-500">
             <p>Swissalytics &mdash; Analyse SEO &amp; AI Search gratuite</p>
-            <p className="mt-1">100% heberge en Suisse</p>
+            <p className="mt-1">100% h&eacute;berg&eacute; en Suisse</p>
           </div>
         </footer>
       </main>
