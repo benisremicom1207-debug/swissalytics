@@ -77,6 +77,22 @@ export default function HomePage() {
       setResult(data);
       setCwvLoading(true);
 
+      // Fire GEO analysis in parallel (non-blocking)
+      fetch('/api/geo-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: validatedUrl }),
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(geoData => {
+          if (!geoData) return;
+          setResult(prev => {
+            if (!prev) return prev;
+            return { ...prev, geoAnalysis: geoData };
+          });
+        })
+        .catch(() => {}); // GEO failure is non-critical
+
       fetch('/api/analyze/cwv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

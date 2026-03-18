@@ -1,0 +1,20 @@
+# Swissalytics - Analyse SEO & AI Search Gratuite
+# https://swissalytics.com
+
+> Swissalytics est un outil gratuit d'analyse SEO et de visibilité IA.
+> Il analyse la présence de votre site sur Google, ChatGPT, Perplexity, Gemini et 12+ moteurs de recherche IA.
+> Propulsé par Pixelab (https://pixelab.ch) - 100% hébergé en Suisse.
+
+## Fonctionnalités
+- Audit SEO technique (Core Web Vitals, Lighthouse, meta tags, headings, images, liens)
+- Analyse GEO (visibilité sur les moteurs de recherche IA par région)
+- Validation Schema.org multi-pages
+- Évaluation E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness)
+- Détection d'indexation sur 12 LLMs (ChatGPT, Perplexity, Gemini, Bing Copilot, Grok, Mistral, etc.)
+- Configuration géographique automatique (18+ régions/pays)
+- Rapport PDF exportable
+
+## Contact
+- Site: https://swissalytics.com
+- Éditeur: Pixelab (https://pixelab.ch)
+- Contact: https://pixelab.ch/contact

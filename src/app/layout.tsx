@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import StructuredData from "./StructuredData";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -81,6 +82,7 @@ export default function RootLayout({
     <html lang="fr">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <StructuredData />
       </head>
       <body className={inter.className}>
         {children}
