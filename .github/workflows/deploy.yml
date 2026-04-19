@@ -21,9 +21,9 @@ jobs:
 
       - name: Install SSH key
         env:
-          DEPLOY_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DEPLOY_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
         run: |
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          echo "$DEPLOY_KEY_B64" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keygen -l -f ~/.ssh/deploy_key
 
