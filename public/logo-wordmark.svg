@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64" width="360" height="64">
+  
+  <g>
+    <rect width="64" height="64" fill="#0A0A0A"></rect>
+    <g fill="#F5F2EA">
+      <rect x="14" y="14" width="28" height="8"></rect>
+      <rect x="14" y="28" width="36" height="8"></rect>
+      <rect x="22" y="42" width="28" height="8"></rect>
+    </g>
+    <rect x="46" y="14" width="4" height="8" fill="#E5241A"></rect>
+    <rect x="14" y="42" width="4" height="8" fill="#E5241A"></rect>
+  </g>
+  
+  <text x="80" y="44" font-family="&#39;Inter Tight&#39;, &#39;Helvetica Neue&#39;, Helvetica, Arial, sans-serif" font-weight="800" font-size="32" letter-spacing="-1.2" fill="#0A0A0A">Swissalytics</text>
+  <rect x="316" y="14" width="6" height="6" fill="#E5241A"></rect>
+</svg>

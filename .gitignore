@@ -29,3 +29,16 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+
+# Claude Code local settings (skill is versioned, local settings are not)
+.claude/settings.local.json
+
+# Design handoff artifacts (inputs, not source)
+*.zip
+
+# Local DB files (when storage is swapped to SQLite)
+data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

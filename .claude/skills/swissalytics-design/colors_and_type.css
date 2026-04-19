@@ -1,0 +1,103 @@
+/* ============================================================
+   Swissalytics — Design System Tokens (v2, Brutalist)
+   Cream + carbon + Swiss red. Typographic. No gradients. No glow.
+   ============================================================ */
+
+:root {
+  /* ---- CORE PALETTE ---- */
+  --sa-cream:     #F5F2EA;     /* primary surface */
+  --sa-cream-2:   #EDEAE0;     /* secondary surface */
+  --sa-cream-3:   #E3DFD2;     /* dividers on cream */
+
+  --sa-ink:       #0A0A0A;     /* primary ink, also primary accent */
+  --sa-ink-2:     #1F1F1F;
+  --sa-ink-3:     #3A3A3A;     /* subdued text */
+  --sa-ink-4:     #6B6B6B;     /* metadata */
+  --sa-rule:      #CFCABE;     /* hairline rule on cream */
+
+  --sa-red:       #E5241A;     /* Swiss red. Used SPARINGLY. */
+  --sa-red-ink:   #B51B13;     /* pressed red */
+
+  /* ---- STATUS ---- */
+  --sa-ok:        #2F6B3F;     /* deep moss green. Not lime. */
+  --sa-warn:      #B87B00;     /* amber ochre */
+  --sa-err:       #E5241A;     /* reuses the red */
+
+  /* ---- SEMANTIC ---- */
+  --sa-bg:        var(--sa-cream);
+  --sa-bg-alt:    var(--sa-cream-2);
+  --sa-fg:        var(--sa-ink);
+  --sa-fg-muted:  var(--sa-ink-3);
+  --sa-fg-meta:   var(--sa-ink-4);
+  --sa-accent:    var(--sa-red);
+
+  /* ---- TYPE ---- */
+  --sa-font-sans: 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --sa-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Scale — tight, editorial */
+  --sa-t-display:  clamp(56px, 9vw, 148px);
+  --sa-t-h1:       clamp(40px, 5.2vw, 72px);
+  --sa-t-h2:       clamp(28px, 3vw, 40px);
+  --sa-t-h3:       20px;
+  --sa-t-body:     16px;
+  --sa-t-small:    13px;
+  --sa-t-caption:  11px;  /* always uppercase + tracked */
+
+  --sa-lh-tight:   0.92;
+  --sa-lh-display: 0.96;
+  --sa-lh-body:    1.45;
+
+  --sa-tr-display: -0.04em;
+  --sa-tr-h:       -0.02em;
+  --sa-tr-caption: 0.12em;
+
+  /* ---- SPACE ---- */
+  --sa-s-1:  4px;  --sa-s-2:  8px;  --sa-s-3: 12px;  --sa-s-4: 16px;
+  --sa-s-5: 24px;  --sa-s-6: 32px;  --sa-s-7: 48px;  --sa-s-8: 64px;
+  --sa-s-9: 96px;  --sa-s-10: 128px;
+
+  /* ---- GEOMETRY ---- */
+  --sa-radius-0: 0;
+  --sa-radius-1: 2px;
+  --sa-radius-2: 4px;    /* only on pills / chips */
+  --sa-border:   1px solid var(--sa-ink);
+  --sa-border-hair: 1px solid var(--sa-rule);
+  --sa-border-heavy: 2px solid var(--sa-ink);
+
+  /* ---- MOTION ---- */
+  --sa-dur-fast: 120ms;
+  --sa-dur:      220ms;
+  --sa-ease:     cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ---- BASE ELEMENTS ---- */
+html, body {
+  background: var(--sa-bg);
+  color: var(--sa-fg);
+  font-family: var(--sa-font-sans);
+  font-size: var(--sa-t-body);
+  line-height: var(--sa-lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.sa-display {
+  font-size: var(--sa-t-display);
+  line-height: var(--sa-lh-display);
+  letter-spacing: var(--sa-tr-display);
+  font-weight: 800;
+}
+.sa-h1 { font-size: var(--sa-t-h1); line-height: var(--sa-lh-tight); letter-spacing: var(--sa-tr-h); font-weight: 800; }
+.sa-h2 { font-size: var(--sa-t-h2); line-height: 1.08; letter-spacing: var(--sa-tr-h); font-weight: 700; }
+.sa-h3 { font-size: var(--sa-t-h3); font-weight: 700; letter-spacing: -0.01em; }
+.sa-body { font-size: var(--sa-t-body); line-height: var(--sa-lh-body); }
+.sa-small { font-size: var(--sa-t-small); line-height: 1.5; color: var(--sa-fg-muted); }
+.sa-caption {
+  font-size: var(--sa-t-caption);
+  text-transform: uppercase;
+  letter-spacing: var(--sa-tr-caption);
+  font-weight: 600;
+  color: var(--sa-fg-meta);
+}
+.sa-mono { font-family: var(--sa-font-mono); font-feature-settings: "tnum" 1, "zero" 1; }

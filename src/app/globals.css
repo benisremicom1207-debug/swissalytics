@@ -2,50 +2,228 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  button:active:not(:disabled) {
-    @apply outline-none;
-    transform: scale(0.98);
-  }
-  button:focus-visible {
-    @apply outline-none ring-2 ring-blue-500/50 ring-offset-1;
-  }
-}
+/* ============================================================
+   Swissalytics v2.4 — Brutalist editorial tokens
+   Cream + carbon + Swiss red. Light + dark. No gradients.
+   ============================================================ */
 
 :root {
-  --a-surface-primary: #ffffff;
-  --a-surface-secondary: #f9fafb;
-  --a-surface-tertiary: #f3f4f6;
-  --a-surface-elevated: #ffffff;
-  --a-border-primary: #e5e7eb;
-  --a-border-secondary: #f3f4f6;
-  --a-text-primary: #111827;
-  --a-text-secondary: #374151;
-  --a-text-tertiary: #6b7280;
-  --a-text-quaternary: #9ca3af;
-  --a-accent: #2563eb;
-  --a-accent-hover: #1d4ed8;
-  --a-accent-light: #eff6ff;
-  --a-accent-text: #ffffff;
-  --a-gauge-track: #e5e7eb;
+  --sa-cream:     #F5F2EA;
+  --sa-cream-2:   #EDEAE0;
+  --sa-cream-3:   #E3DFD2;
+  --sa-ink:       #0A0A0A;
+  --sa-ink-2:     #1F1F1F;
+  --sa-ink-3:     #3A3A3A;
+  --sa-ink-4:     #6B6B6B;
+  --sa-rule:      #CFCABE;
+  --sa-red:       #E5241A;
+  --sa-red-ink:   #B51B13;
+  --sa-ok:        #2F6B3F;
+  --sa-warn:      #B87B00;
+  --sa-err:       #E5241A;
+
+  --sa-bg:        var(--sa-cream);
+  --sa-bg-alt:    var(--sa-cream-2);
+  --sa-fg:        var(--sa-ink);
+  --sa-fg-muted:  var(--sa-ink-3);
+  --sa-fg-meta:   var(--sa-ink-4);
+
+  --sa-font-sans: var(--font-sans), 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --sa-font-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sa-font-serif: var(--font-serif), 'Fraunces', Georgia, 'Times New Roman', serif;
+
+  /* Back-compat legacy tokens (used by some older components) */
+  --a-surface-primary:   var(--sa-cream);
+  --a-surface-secondary: var(--sa-cream-2);
+  --a-surface-tertiary:  var(--sa-cream-3);
+  --a-surface-elevated:  var(--sa-cream);
+  --a-border-primary:    var(--sa-ink);
+  --a-border-secondary:  var(--sa-rule);
+  --a-text-primary:      var(--sa-ink);
+  --a-text-secondary:    var(--sa-ink-2);
+  --a-text-tertiary:     var(--sa-ink-3);
+  --a-text-quaternary:   var(--sa-ink-4);
+  --a-accent:            var(--sa-ink);
+  --a-accent-hover:      var(--sa-ink-2);
+  --a-accent-light:      var(--sa-cream-2);
+  --a-accent-text:       var(--sa-cream);
+  --a-gauge-track:       rgba(10, 10, 10, 0.18);
 }
 
+html[data-dark="true"] {
+  --sa-cream:     #0A0A0A;
+  --sa-cream-2:   #141414;
+  --sa-cream-3:   #1E1E1E;
+  --sa-ink:       #F5F2EA;
+  --sa-ink-2:     #E3DFD2;
+  --sa-ink-3:     #B4AFA2;
+  --sa-ink-4:     #7F7A6E;
+  --sa-rule:      #2A2A2A;
+
+  --a-gauge-track: rgba(245, 242, 234, 0.18);
+}
+
+html[data-density="compact"] { --sa-density: 0.85; }
+html[data-density="roomy"]   { --sa-density: 1.15; }
+html                          { --sa-density: 1; }
+
 @layer base {
+  * { box-sizing: border-box; }
   html {
     scroll-behavior: auto !important;
   }
   body {
-    @apply bg-white text-gray-900;
+    background: var(--sa-bg);
+    color: var(--sa-fg);
+    font-family: var(--sa-font-sans);
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01", "cv11";
+    transition: background 160ms ease, color 160ms ease;
     overflow-x: hidden;
   }
+  button:active:not(:disabled) {
+    @apply outline-none;
+    transform: scale(0.99);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--sa-red);
+    outline-offset: 2px;
+  }
+  ::selection { background: var(--sa-ink); color: var(--sa-cream); }
 }
 
 @layer utilities {
-  .scrollbar-hide {
+  .sa-mono, .mono {
+    font-family: var(--sa-font-mono);
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+  .sa-serif, .serif { font-family: var(--sa-font-serif); }
+  .sa-caption, .caption {
+    font-family: var(--sa-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--sa-ink-4);
+  }
+  .caption-ink { color: var(--sa-ink); }
+  .caption-red { color: var(--sa-red); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .sa-hairline, .hairline { border: 1px solid var(--sa-rule); }
+  .sa-frame, .frame    { border: 2px solid var(--sa-ink); }
+  .rule-t   { border-top: 1px solid var(--sa-rule); }
+  .rule-b   { border-bottom: 1px solid var(--sa-rule); }
+  .ink-t    { border-top: 2px solid var(--sa-ink); }
+  .ink-b    { border-bottom: 2px solid var(--sa-ink); }
+
+  .display {
+    font-family: var(--sa-font-sans);
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+  }
+  .h1 { font-weight: 800; letter-spacing: -0.03em; line-height: 0.96; }
+  .h2 { font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+  .h3 { font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; }
+
+  .tracking-tight-2 { letter-spacing: -0.02em; }
+  .tracking-tight-3 { letter-spacing: -0.03em; }
+  .tracking-tight-4 { letter-spacing: -0.04em; }
+
+  .scrollbar-hide, .noscrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-hide::-webkit-scrollbar,
+  .noscrollbar::-webkit-scrollbar { display: none; }
+
+  /* Cross-hatched placeholder for imagery */
+  .placeholder-hatch {
+    background-color: var(--sa-cream-2);
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        transparent 0 7px,
+        rgba(10,10,10,0.07) 7px 8px
+      );
+  }
+  html[data-dark="true"] .placeholder-hatch {
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        transparent 0 7px,
+        rgba(245,242,234,0.06) 7px 8px
+      );
   }
 }
+
+/* ============================================================
+   Brutalist overrides — force v2 look across legacy components
+   without rewriting each one.
+   ============================================================ */
+main, main * { backdrop-filter: none !important; }
+
+.rounded, .rounded-sm, .rounded-md, .rounded-lg, .rounded-xl,
+.rounded-2xl, .rounded-3xl, .rounded-t-xl, .rounded-b-xl,
+.rounded-t-2xl, .rounded-b-2xl {
+  border-radius: 0 !important;
+}
+
+.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+  box-shadow: none !important;
+}
+
+.bg-white { background-color: var(--sa-cream) !important; }
+.text-gray-900 { color: var(--sa-ink) !important; }
+.text-gray-500, .text-gray-400, .text-gray-300 { color: var(--sa-ink-4) !important; }
+.border-gray-200, .border-gray-100 { border-color: var(--sa-rule) !important; }
+
+/* ============================================================
+   Animations — Swiss ease, no bounces, no springs
+   ============================================================ */
+
+@keyframes sa-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sa-rise { animation: sa-rise 560ms cubic-bezier(0.2, 0, 0, 1) both; }
+
+@keyframes sa-ping {
+  0%   { transform: scale(1);   opacity: 0.75; }
+  80%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.sa-ping { animation: sa-ping 1400ms cubic-bezier(0.2, 0, 0, 1) infinite; }
+
+@keyframes sa-spin { to { transform: rotate(360deg); } }
+.sa-spin { animation: sa-spin 1400ms linear infinite; }
+
+@keyframes sa-ticker-scroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+.sa-ticker { animation: sa-ticker-scroll 28s linear infinite; }
+
+@keyframes sa-flash {
+  0%, 100% { opacity: 0.45; }
+  20%, 40% { opacity: 1; }
+}
+
+@keyframes sa-scan {
+  0%   { top: 0; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.sa-scanner { animation: sa-scan 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+@keyframes sa-gauge {
+  0%   { stroke-dashoffset: 239; }
+  50%  { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 239; }
+}
+.sa-gauge-spin { animation: sa-gauge 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
