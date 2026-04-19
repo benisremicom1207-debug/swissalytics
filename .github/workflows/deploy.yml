@@ -20,9 +20,12 @@ jobs:
           ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Install SSH key
+        env:
+          DEPLOY_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key
 
       - name: Trigger remote deploy
         run: |
