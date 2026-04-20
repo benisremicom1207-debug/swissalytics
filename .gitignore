@@ -36,6 +36,11 @@ next-env.d.ts
 # Design handoff artifacts (inputs, not source)
 *.zip
 
+# Screenshots dropped at repo root by accident
+/image.png
+/image*.png
+/screenshot*.png
+
 # Local DB files (when storage is swapped to SQLite)
 data/
 *.sqlite
