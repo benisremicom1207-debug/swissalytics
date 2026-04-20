@@ -141,8 +141,6 @@ export default function Footer() {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  borderBottom: '2px solid var(--sa-red)',
-                  paddingBottom: 1,
                   color: 'var(--sa-ink)',
                   lineHeight: 1,
                 }}
