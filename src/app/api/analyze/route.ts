@@ -140,14 +140,87 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const rawMessage = err instanceof Error ? err.message : 'Erreur inattendue';
     console.error('[/api/analyze]', rawMessage);
-    const isTimeout = rawMessage.includes('Timeout');
+
+    // 403/401 : site anti-bot (WAF Cloudflare, Akamai, etc.)
+    if (/HTTP 40[13]/i.test(rawMessage)) {
+      return NextResponse.json(
+        {
+          error:
+            "Ce site bloque les analyses automatiques (pare-feu anti-bot). Swissalytics ne peut pas l'analyser — essayez un autre site.",
+        },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // 404 : page inexistante
+    if (/HTTP 404/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: "Page introuvable (HTTP 404) — vérifiez l'URL." },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // Autres HTTP 4xx/5xx retournés par la cible
+    const httpMatch = rawMessage.match(/HTTP (\d{3})/i);
+    if (httpMatch) {
+      return NextResponse.json(
+        { error: `Le site a répondu avec une erreur HTTP ${httpMatch[1]}. Impossible de l'analyser.` },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // DNS : domaine inexistant (typo, TLD invalide)
+    if (/ENOTFOUND|getaddrinfo|dns/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: "Domaine introuvable — vérifiez l'orthographe de l'URL." },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // Connexion refusée / reset
+    if (/ECONNREFUSED|ECONNRESET|EHOSTUNREACH|ENETUNREACH/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: 'Le site ne répond pas (connexion refusée ou injoignable).' },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // Certificat TLS invalide
+    if (/CERT|SSL|TLS/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: 'Problème de certificat HTTPS sur le site cible.' },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // Taille de réponse trop importante
+    if (/trop importante|too large/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: 'La page est trop volumineuse pour être analysée (> 10 MB).' },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // Trop de redirections
+    if (/redirection/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: 'Trop de redirections — le site boucle sur lui-même.' },
+        { status: 422, headers: CORS },
+      );
+    }
+
+    // Timeout
+    if (/Timeout|ETIMEDOUT/i.test(rawMessage)) {
+      return NextResponse.json(
+        { error: "Délai d'attente dépassé — le site met trop de temps à répondre (> 20s)." },
+        { status: 504, headers: CORS },
+      );
+    }
+
+    // Inattendu
     return NextResponse.json(
-      {
-        error: isTimeout
-          ? "Délai d'attente dépassé — le site ne répond pas."
-          : "Une erreur est survenue lors de l'analyse. Veuillez réessayer.",
-      },
-      { status: isTimeout ? 504 : 500, headers: CORS },
+      { error: "Une erreur est survenue lors de l'analyse. Veuillez réessayer." },
+      { status: 500, headers: CORS },
     );
   }
 }
