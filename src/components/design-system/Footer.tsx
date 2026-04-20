@@ -149,7 +149,7 @@ export default function Footer() {
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  viewBox="300 303 475 130"
+                  viewBox="265 295 520 145"
                   aria-hidden="true"
                   style={{ height: '1.3em', width: 'auto', fill: 'currentColor', verticalAlign: '-0.2em' }}
                 >
