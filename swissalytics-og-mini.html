@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Swissalytics OG Promo</title>
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --ink: #09111c;
+      --muted: #44505f;
+      --red: #e53a2f;
+      --grid: rgba(9,17,28,.10);
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    .og {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      background:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px),
+        var(--bg);
+      background-size: 48px 48px, 48px 48px, auto;
+      border: 2px solid var(--ink);
+      overflow: hidden;
+    }
+
+    .frame-top {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 84px;
+      border-bottom: 2px solid var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 36px;
+      background: rgba(244,239,229,.92);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+      font-size: 34px;
+      letter-spacing: -0.05em;
+    }
+
+    .brand svg.mark {
+      width: 38px;
+      height: 38px;
+      display: block;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--red);
+      margin-left: 4px;
+      vertical-align: baseline;
+    }
+
+    .brand .dot {
+      width: 6px;
+      height: 6px;
+      margin-left: 2px;
+      vertical-align: 2px;
+    }
+
+    .content {
+      position: absolute;
+      inset: 84px 0 0 0;
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+    }
+
+    .left {
+      padding: 44px 40px 28px 40px;
+      display: flex;
+      flex-direction: column;
+      border-right: 2px solid var(--ink);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 84px;
+      line-height: .92;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+      max-width: 700px;
+    }
+
+    h1 em {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+    }
+
+    h1 .red { color: var(--red); }
+
+    .sub {
+      margin-top: 24px;
+      max-width: 640px;
+      font-size: 30px;
+      line-height: 1.22;
+      color: var(--muted);
+      letter-spacing: -0.02em;
+      font-weight: 500;
+    }
+
+    .llms {
+      margin-top: 28px;
+      padding-top: 28px;
+      border-top: 2px solid var(--ink);
+    }
+
+    .llms-label {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .llms-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      column-gap: 28px;
+      row-gap: 10px;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+    }
+
+    .llm {
+      position: relative;
+    }
+
+    .llm + .llm::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 7px;
+      height: 7px;
+      background: var(--red);
+    }
+
+    .right {
+      position: relative;
+      padding: 56px 36px 56px 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    .free-card {
+      position: relative;
+      border: 2px solid var(--ink);
+      background: var(--bg);
+      padding: 38px 34px 34px;
+    }
+
+    .free-card::before {
+      content: "";
+      position: absolute;
+      inset: -18px -18px auto auto;
+      width: 90px;
+      height: 90px;
+      border: 2px solid var(--ink);
+      background: var(--red);
+      z-index: -1;
+    }
+
+    .free-eyebrow {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .free-title {
+      font-size: 92px;
+      line-height: .92;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .free-title .red { color: var(--red); }
+
+    .free-meta {
+      margin-top: 26px;
+      padding-top: 22px;
+      border-top: 2px solid var(--ink);
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .free-meta span {
+      display: inline-block;
+    }
+
+    .free-meta .sep {
+      color: var(--red);
+      margin: 0 8px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <div class="og">
+    <div class="frame-top">
+      <div class="brand">
+        <svg class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" fill="#0A0A0A"/>
+          <g fill="#F5F2EA">
+            <rect x="14" y="14" width="28" height="8"/>
+            <rect x="14" y="28" width="36" height="8"/>
+            <rect x="22" y="42" width="28" height="8"/>
+          </g>
+          <rect x="46" y="14" width="4" height="8" fill="#E5241A"/>
+          <rect x="14" y="42" width="4" height="8" fill="#E5241A"/>
+        </svg>
+        <div>Swissalytics<span class="dot"></span></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <section class="left">
+        <div>
+          <h1>
+            Votre site,<br>
+            vu par <em>les humains</em><br>
+            et par <span class="red">l'IA</span><span class="dot"></span>
+          </h1>
+          <div class="sub">L'audit SEO &amp; AI Search qui lit votre site comme Google — et comme les IA.</div>
+        </div>
+
+        <div class="llms">
+          <div class="llms-label">Visible sur les moteurs IA que vos clients utilisent&nbsp;:</div>
+          <div class="llms-row">
+            <div class="llm">ChatGPT</div>
+            <div class="llm">Claude</div>
+            <div class="llm">Gemini</div>
+            <div class="llm">Perplexity</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="right">
+        <div class="free-card">
+          <div class="free-eyebrow">100 % gratuit · Sans compte</div>
+          <h2 class="free-title">
+            Audit<br>
+            <span class="red">gratuit</span><span class="dot"></span>
+          </h2>
+          <div class="free-meta">
+            <span>30 sec</span><span class="sep">·</span><span>Hébergé en CH</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>
