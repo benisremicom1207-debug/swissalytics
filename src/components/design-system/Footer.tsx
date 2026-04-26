@@ -9,6 +9,7 @@ const LINKS: Record<string, { label: string; href?: string; external?: boolean }
   produit: [
     { label: 'Méthode', href: '/methode' },
     { label: 'Exemples', href: '/exemples' },
+    { label: 'Comparatifs', href: '/compare' },
     { label: 'API' },
     { label: 'Changelog' },
   ],
