@@ -1,20 +1,49 @@
-# Swissalytics - Analyse SEO & AI Search Gratuite
-# https://swissalytics.com
+# Swissalytics
 
-> Swissalytics est un outil gratuit d'analyse SEO et de visibilité IA.
-> Il analyse la présence de votre site sur Google, ChatGPT, Perplexity, Gemini et 12+ moteurs de recherche IA.
-> Propulsé par Pixelab (https://pixelab.ch) - 100% hébergé en Suisse.
+> Swissalytics est un outil gratuit d'analyse SEO et de visibilité IA (GEO).
+> Il audite votre site comme Google le voit — et comme ChatGPT, Claude,
+> Perplexity, Gemini et 12+ moteurs IA le voient. Édité par Pixelab,
+> agence web suisse basée à Genève.
 
-## Fonctionnalités
-- Audit SEO technique (Core Web Vitals, Lighthouse, meta tags, headings, images, liens)
-- Analyse GEO (visibilité sur les moteurs de recherche IA par région)
+## Pages principales
+
+- [Accueil](https://swissalytics.com/): Lancer un audit gratuit en 30 secondes
+- [Méthode](https://swissalytics.com/methode): Comment Swissalytics évalue un site (signaux SEO + GEO + E-E-A-T)
+- [Exemples](https://swissalytics.com/exemples): Rapports d'audit publics sur des sites suisses
+- [À propos](https://swissalytics.com/a-propos): Qui édite Swissalytics et pourquoi
+- [Journal](https://swissalytics.com/journal): Articles techniques sur le SEO et le GEO
+
+## Comparatifs
+
+- [Swissalytics vs Semrush](https://swissalytics.com/compare/swissalytics-vs-semrush): SEO classique vs GEO, prix, cas d'usage
+- [Swissalytics vs Otterly](https://swissalytics.com/compare/swissalytics-vs-otterly): Deux outils GEO comparés feature à feature
+- [Tous les comparatifs](https://swissalytics.com/compare): Index des comparaisons
+
+## Articles de fond
+
+- [Comment ChatGPT choisit ses sources](https://swissalytics.com/journal/comment-chatgpt-choisit-ses-sources): Analyse de 400 réponses ChatGPT
+- [Schema.org : le détail qui change tout](https://swissalytics.com/journal/schema-org-le-detail-qui-change-tout): Pourquoi le JSON-LD compte pour les LLM
+- [Le SEO n'est pas mort, il a juste muté](https://swissalytics.com/journal/le-seo-n-est-pas-mort): Ce qui change avec les moteurs génératifs
+- [Entités nommées : pourquoi ChatGPT vous confond](https://swissalytics.com/journal/entites-nommees-pourquoi-chatgpt-vous-confond): Désambiguïser sa marque pour les LLM
+- [Cas client Terre des hommes : +42% de citations IA](https://swissalytics.com/journal/cas-client-terre-des-hommes): Avant/après d'un audit complet
+- [llms.txt : le mode d'emploi honnête](https://swissalytics.com/journal/llms-txt-mode-d-emploi): Ce que ce fichier fait, et ne fait pas
+- [GEO vs SEO : des définitions qui tiennent](https://swissalytics.com/journal/geo-vs-seo-definitions): Démêler GEO, AEO, AIO, LLMO
+
+## Ce que fait l'outil
+
+- Audit SEO technique : Core Web Vitals, Lighthouse, meta tags, headings, images, liens
+- Analyse GEO : visibilité sur les moteurs de recherche IA par région
 - Validation Schema.org multi-pages
 - Évaluation E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness)
 - Détection d'indexation sur 12 LLMs (ChatGPT, Perplexity, Gemini, Bing Copilot, Grok, Mistral, etc.)
-- Configuration géographique automatique (18+ régions/pays)
+- Configuration géographique automatique (18+ régions et pays)
 - Rapport PDF exportable
+- Plan d'action priorisé (critique / amélioration / suggestion)
 
-## Contact
-- Site: https://swissalytics.com
-- Éditeur: Pixelab (https://pixelab.ch)
-- Contact: https://pixelab.ch/contact
+## Optional
+
+- [Mentions légales](https://swissalytics.com/mentions-legales): Conditions d'utilisation
+- [Confidentialité](https://swissalytics.com/confidentialite): Politique de données
+- [Pixelab](https://pixelab.ch): L'agence web qui édite Swissalytics
+- [Contact agence](https://pixelab.ch/contact): Pour un audit sur mesure ou un accompagnement
+- Email : hello@swissalytics.com

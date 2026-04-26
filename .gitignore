@@ -47,3 +47,4 @@ data/
 *.sqlite-journal
 *.sqlite-wal
 *.sqlite-shm
+.gstack/

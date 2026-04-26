@@ -1,4 +1,113 @@
+# Swissalytics — robots.txt
+# Audit SEO & AI-search · https://swissalytics.com
+#
+# Politique : tous les bots sont les bienvenus sur les pages publiques.
+# Les routes éphémères (/api/, /r/, /s/) sont écartées car le contenu
+# n'est pas persistant côté serveur (in-memory).
+
+# ─────────────────────────────────────────────
+# Default — open access for all crawlers
+# ─────────────────────────────────────────────
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /r/
+Disallow: /s/
 
+# ─────────────────────────────────────────────
+# OpenAI
+# ─────────────────────────────────────────────
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /r/
+Disallow: /s/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+Disallow: /r/
+Disallow: /s/
+
+# ─────────────────────────────────────────────
+# Anthropic
+# ─────────────────────────────────────────────
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /r/
+Disallow: /s/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /api/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /api/
+
+# ─────────────────────────────────────────────
+# Perplexity
+# ─────────────────────────────────────────────
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /r/
+Disallow: /s/
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /api/
+
+# ─────────────────────────────────────────────
+# Google AI / Apple AI
+# ─────────────────────────────────────────────
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /r/
+Disallow: /s/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /api/
+
+# ─────────────────────────────────────────────
+# Other AI crawlers
+# ─────────────────────────────────────────────
+User-agent: meta-externalagent
+Allow: /
+Disallow: /api/
+
+User-agent: Bytespider
+Allow: /
+Disallow: /api/
+
+User-agent: cohere-ai
+Allow: /
+Disallow: /api/
+
+User-agent: MistralAI-User
+Allow: /
+Disallow: /api/
+
+User-agent: DuckAssistBot
+Allow: /
+Disallow: /api/
+
+User-agent: YouBot
+Allow: /
+Disallow: /api/
+
+User-agent: Amazonbot
+Allow: /
+Disallow: /api/
+
+# ─────────────────────────────────────────────
+# Sitemap
+# ─────────────────────────────────────────────
 Sitemap: https://swissalytics.com/sitemap.xml
