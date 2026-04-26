@@ -36,7 +36,7 @@ function VerdictPill({
   if (!verdict) return null;
   const cfg = {
     'sa-wins': {
-      label: isFr ? 'SA' : 'SA',
+      label: 'Swissalytics',
       bg: 'var(--sa-red)',
       fg: 'var(--sa-cream)',
     },
@@ -46,7 +46,7 @@ function VerdictPill({
       fg: 'var(--sa-ink)',
     },
     'competitor-wins': {
-      label: isFr ? 'Concurrent' : 'Rival',
+      label: isFr ? 'Concurrent' : 'Competitor',
       bg: 'var(--sa-ink)',
       fg: 'var(--sa-cream)',
     },
@@ -449,13 +449,12 @@ export default function ComparePage({
             </h1>
             <p
               style={{
-                fontFamily: 'var(--sa-font-serif)',
-                fontSize: 20,
-                fontStyle: 'italic',
+                fontFamily: 'var(--sa-font-sans)',
+                fontSize: 19,
                 color: 'var(--sa-ink-2)',
                 marginTop: 24,
                 marginBottom: 0,
-                lineHeight: 1.45,
+                lineHeight: 1.5,
                 textWrap: 'pretty',
                 maxWidth: 720,
               }}
@@ -504,6 +503,7 @@ export default function ComparePage({
             }}
           >
             {tldr}
+            <Pixel />
           </div>
         </div>
 
@@ -536,8 +536,9 @@ export default function ComparePage({
             }}
           >
             {isFr
-              ? `Swissalytics et ${page.competitor}, dimension par dimension`
-              : `Swissalytics and ${page.competitor}, side by side`}
+              ? `Swissalytics et ${page.competitor}, dimension par dimension.`
+              : `Swissalytics and ${page.competitor}, side by side.`}
+            <Pixel />
           </h2>
 
           <div
@@ -551,7 +552,7 @@ export default function ComparePage({
               className="mono"
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1.3fr 1.5fr 1.5fr 90px',
+                gridTemplateColumns: '1.3fr 1.5fr 1.5fr 160px',
                 background: 'var(--sa-ink)',
                 color: 'var(--sa-cream)',
                 fontSize: 10,
@@ -597,7 +598,7 @@ export default function ComparePage({
                 key={i}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.3fr 1.5fr 1.5fr 90px',
+                  gridTemplateColumns: '1.3fr 1.5fr 1.5fr 160px',
                   borderTop: i === 0 ? '0' : '1px solid var(--sa-rule)',
                   background:
                     i % 2 === 0 ? 'var(--sa-cream)' : 'var(--sa-cream-2)',
@@ -663,8 +664,8 @@ export default function ComparePage({
             }}
           >
             {isFr
-              ? 'SA = avantage Swissalytics · Concurrent = avantage du concurrent · Égalité = équivalent'
-              : 'SA = Swissalytics edge · Rival = competitor edge · Tie = equivalent'}
+              ? 'Pill = qui a l\'avantage sur cette dimension'
+              : 'Pill = who has the edge on this dimension'}
           </div>
         </section>
 
@@ -832,9 +833,9 @@ export default function ComparePage({
            ────────────────────────── */}
         <article
           style={{
-            fontFamily: 'var(--sa-font-serif)',
-            fontSize: 18,
-            lineHeight: 1.7,
+            fontFamily: 'var(--sa-font-sans)',
+            fontSize: 17,
+            lineHeight: 1.65,
             color: 'var(--sa-ink)',
             marginBottom: 72,
           }}
@@ -877,9 +878,9 @@ export default function ComparePage({
                     padding: '28px 28px 28px 32px',
                     borderLeft: '4px solid var(--sa-red)',
                     background: 'var(--sa-cream-2)',
-                    fontFamily: 'var(--sa-font-serif)',
-                    fontSize: 22,
-                    fontStyle: 'italic',
+                    fontFamily: 'var(--sa-font-sans)',
+                    fontSize: 21,
+                    fontWeight: 600,
                     lineHeight: 1.35,
                     color: 'var(--sa-ink)',
                     textWrap: 'pretty',
@@ -921,7 +922,8 @@ export default function ComparePage({
               color: 'var(--sa-ink)',
             }}
           >
-            {isFr ? 'Questions fréquentes' : 'Frequently asked questions'}
+            {isFr ? 'Questions fréquentes.' : 'Frequently asked questions.'}
+            <Pixel />
           </h2>
 
           <div style={{ border: '2px solid var(--sa-ink)' }}>
@@ -1075,8 +1077,8 @@ function FaqItem({ q, a, idx }: { q: string; a: string; idx: number }) {
         <div
           style={{
             padding: '0 24px 24px 24px',
-            fontFamily: 'var(--sa-font-serif)',
-            fontSize: 17,
+            fontFamily: 'var(--sa-font-sans)',
+            fontSize: 16,
             lineHeight: 1.6,
             color: 'var(--sa-ink-2)',
             textWrap: 'pretty',
