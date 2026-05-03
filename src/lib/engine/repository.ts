@@ -1,8 +1,9 @@
 /**
  * ReportsRepository — persistence interface.
  *
- * Swap the implementation in `repositoryInstance.ts` to move from in-memory
- * to SQLite, Postgres, etc. The rest of the app only depends on this interface.
+ * Production impl: `SupabaseReportsRepository`, wired in `repositoryInstance.ts`.
+ * Swap that one line to move to a different backend. The rest of the app
+ * only depends on this interface.
  */
 
 import type { Lang, ReportSummary, StoredReport } from './types';

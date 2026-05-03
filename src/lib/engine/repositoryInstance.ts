@@ -1,8 +1,8 @@
 /**
  * The single repository instance used by API routes.
  *
- * Swappable through the ReportsRepository interface — see DB_SWAP.md.
- * Phase 1: Supabase-backed. The in-memory implementation has been removed.
+ * Swappable through the ReportsRepository interface — change `createRepo`
+ * below to use a different backend. Production: Supabase Postgres (Zurich).
  */
 
 import type { ReportsRepository } from './repository';
