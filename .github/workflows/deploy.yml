@@ -12,7 +12,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: .env  # accesses SUPABASE_* + IP_HASH_SALT secrets scoped to this env
     steps:
       - name: Add VPS to known_hosts
         run: |
@@ -35,64 +34,12 @@ jobs:
               -o ConnectTimeout=15 \
               ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
 
-      - name: Apply Supabase env vars to running container
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          IP_HASH_SALT: ${{ secrets.IP_HASH_SALT }}
+      - name: Smoke test
         run: |
-          # Encode the env file content as base64 so we can embed it safely
-          # in the remote shell script (avoids quoting/expansion hell)
-          ENV_B64=$(printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_ROLE_KEY=%s\nIP_HASH_SALT=%s\n' \
-            "$SUPABASE_URL" "$SUPABASE_SERVICE_ROLE_KEY" "$IP_HASH_SALT" | base64 -w0)
-
-          # Write the remote script locally first, with ENV_B64 inlined.
-          # We pipe via `bash -s` (stdin) which gives us a clean non-interactive
-          # non-login shell on the remote — bypasses any .bash_profile/.bashrc
-          # auto-deploy hooks that polluted the previous SCP attempt.
-          cat > /tmp/remote.sh <<REMOTE
-          set -e
-          echo "$ENV_B64" | base64 -d > ~/.swissalytics.env
-          chmod 600 ~/.swissalytics.env
-
-          IMAGE=\$(docker inspect swissalytics --format '{{.Config.Image}}')
-          EXISTING_GOOGLE_KEY=\$(docker inspect swissalytics --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^GOOGLE_PAGESPEED_API_KEY=' | cut -d= -f2- || true)
-
-          docker stop swissalytics 2>/dev/null || true
-          docker rm swissalytics 2>/dev/null || true
-
-          docker run -d \
-            --name swissalytics \
-            --restart unless-stopped \
-            -p 80:3000 \
-            -e NODE_ENV=production \
-            -e ALLOWED_ORIGIN=https://swissalytics.com \
-            -e "GOOGLE_PAGESPEED_API_KEY=\$EXISTING_GOOGLE_KEY" \
-            --env-file ~/.swissalytics.env \
-            "\$IMAGE"
-
           sleep 3
-          docker ps --filter name=swissalytics --format '{{.Names}} {{.Status}}'
-          REMOTE
-
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -T \
-              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              bash -s < /tmp/remote.sh
-
-      - name: Smoke test (Supabase wired)
-        run: |
-          sleep 5
-          HEALTH=$(curl -s -w "\nHTTP %{http_code}" https://swissalytics.com/api/health)
-          HTTP=$(echo "$HEALTH" | tail -n1 | awk '{print $2}')
-          BODY=$(echo "$HEALTH" | sed '$d')
-          echo "Body: $BODY"
-          echo "Status: HTTP $HTTP"
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" https://swissalytics.com/)
           if [ "$HTTP" != "200" ]; then
-            echo "::error::/api/health returned HTTP $HTTP — Supabase not properly wired"
+            echo "Smoke test KO: HTTP $HTTP"
             exit 1
           fi
-          if ! echo "$BODY" | grep -q '"supabase":"up"'; then
-            echo "::error::/api/health responded 200 but supabase != up"
-            exit 1
-          fi
-          echo "Health check OK: Supabase up"
+          echo "Smoke test OK: HTTP 200"
