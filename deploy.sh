@@ -4,7 +4,7 @@
 
 set -e
 
-IMAGE="ghcr.io/benisremicom1207-debug/swissalytics:latest"
+IMAGE="ghcr.io/pixelab-ch/swissalytics:latest"
 CONTAINER_NAME="swissalytics"
 
 echo "=== Swissalytics Deploy ==="
