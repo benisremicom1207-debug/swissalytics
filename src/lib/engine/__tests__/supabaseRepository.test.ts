@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { rowToStored, storedToRow } from '../supabaseRepository';
-import type { StoredReport } from '../types';
+import type { AnalysisReport, StoredReport } from '../types';
+
+// Minimal AnalysisReport stub — full shape is large; cast via unknown is the
+// pragmatic fixture path so the test focuses on row<->stored mapping logic.
+const stubReport = { score: 72, url: 'https://pixelab.ch/' } as unknown as AnalysisReport;
 
 const sampleStored: StoredReport = {
   id: 'pixelab-ch-a8x4',
@@ -11,7 +15,7 @@ const sampleStored: StoredReport = {
   crawlMs: 18234,
   shareToken: null,
   shareExpiresAt: null,
-  data: { score: 72, url: 'https://pixelab.ch/' } as any,
+  data: stubReport,
   ipHash: 'a'.repeat(64),
   country: 'CH',
   userAgent: 'Mozilla/5.0',

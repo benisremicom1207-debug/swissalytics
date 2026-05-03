@@ -11,7 +11,7 @@
  */
 
 import type { ReportsRepository } from './repository';
-import type { Lang, ReportSummary, StoredReport } from './types';
+import type { AnalysisReport, Lang, ReportSummary, StoredReport } from './types';
 import { getSupabaseClient } from './supabaseClient';
 
 interface ReportRow {
@@ -23,7 +23,7 @@ interface ReportRow {
   crawl_ms: number;
   share_token: string | null;
   share_expires_at: string | null;
-  data: any;
+  data: unknown;
   ip_hash: string | null;
   country: string | null;
   user_agent: string | null;
@@ -62,7 +62,7 @@ export function rowToStored(row: ReportRow): StoredReport {
     shareExpiresAt: row.share_expires_at
       ? new Date(row.share_expires_at).getTime()
       : null,
-    data: row.data,
+    data: row.data as AnalysisReport,
     ipHash: row.ip_hash,
     country: row.country,
     userAgent: row.user_agent,
@@ -186,7 +186,15 @@ export class SupabaseReportsRepository implements ReportsRepository {
       .order('created_at', { ascending: false })
       .limit(limit);
     if (error) throw new Error(`supabase listRecent: ${error.message}`);
-    return (data ?? []).map((r: any) => ({
+    return (data ?? []).map((r: {
+      id: string;
+      url: string;
+      lang: Lang;
+      score: number;
+      created_at: string;
+      share_token: string | null;
+      share_expires_at: string | null;
+    }) => ({
       id: r.id,
       url: r.url,
       lang: r.lang,

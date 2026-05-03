@@ -58,7 +58,7 @@ export interface AnalysisResult {
   technical: TechnicalAnalysis;
   metadata: MetadataAnalysis;
   readability: ReadabilityAnalysis;
-  geoAnalysis?: any;
+  geoAnalysis?: unknown;
 }
 
 export interface HeadingsAnalysis {
