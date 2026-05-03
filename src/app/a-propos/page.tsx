@@ -333,6 +333,74 @@ export default function AProposPage() {
           ))}
         </div>
 
+        {/* Privacy block */}
+        <div
+          style={{
+            marginTop: 80,
+            display: 'grid',
+            gridTemplateColumns: '1fr 2fr',
+            gap: 48,
+          }}
+        >
+          <div>
+            <div
+              className="mono"
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--sa-red)',
+                marginBottom: 12,
+              }}
+            >
+              § {isFr ? 'Vie privée' : 'Privacy'}
+            </div>
+            <h2
+              className="display"
+              style={{
+                fontSize: 'clamp(32px, 4vw, 48px)',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.05,
+                margin: 0,
+              }}
+            >
+              {isFr ? 'Anonyme par défaut' : 'Anonymous by default'}
+              <Pixel />
+            </h2>
+          </div>
+          <div
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              color: 'var(--sa-ink-2)',
+              textWrap: 'pretty',
+            }}
+          >
+            <p style={{ margin: '0 0 14px 0' }}>
+              {isFr
+                ? "Pas de compte requis. Pas de cookie de tracking. Aucun email ni nom collecté."
+                : 'No account required. No tracking cookies. No email or name collected.'}
+            </p>
+            <p style={{ margin: '0 0 14px 0' }}>
+              {isFr
+                ? "À chaque analyse, nous enregistrons l'URL et quelques métadonnées techniques (pays, navigateur, IP pseudonymisée par HMAC-SHA-256). Conservation 180 jours, base de données à Zurich (Supabase)."
+                : 'On each analysis, we store the URL and some technical metadata (country, browser, HMAC-SHA-256 pseudonymized IP). 180-day retention, database in Zurich (Supabase).'}
+            </p>
+            <p style={{ margin: 0 }}>
+              {isFr ? 'Détail complet : ' : 'Full details: '}
+              <Link
+                href="/mentions-legales"
+                style={{ color: 'var(--sa-ink)', textDecoration: 'underline' }}
+              >
+                {isFr ? 'mentions légales' : 'legal notice'}
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
+
         {/* Dual CTA block */}
         <div
           style={{
