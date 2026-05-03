@@ -41,27 +41,22 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           IP_HASH_SALT: ${{ secrets.IP_HASH_SALT }}
         run: |
-          # Build env file with shell-safe printf (no expansion surprises)
-          {
-            printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
-            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
-            printf 'IP_HASH_SALT=%s\n' "$IP_HASH_SALT"
-          } > /tmp/swiss.env
+          # Encode the env file content as base64 so we can embed it safely
+          # in the remote shell script (avoids quoting/expansion hell)
+          ENV_B64=$(printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_ROLE_KEY=%s\nIP_HASH_SALT=%s\n' \
+            "$SUPABASE_URL" "$SUPABASE_SERVICE_ROLE_KEY" "$IP_HASH_SALT" | base64 -w0)
 
-          # SCP to VPS — scp uses sftp subsystem, doesn't trigger user login shell
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
-              /tmp/swiss.env \
-              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/.swissalytics.env
-
-          # Recreate container with full env (preserves existing GOOGLE_PAGESPEED_API_KEY)
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
-              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              bash -s <<'REMOTE'
+          # Write the remote script locally first, with ENV_B64 inlined.
+          # We pipe via `bash -s` (stdin) which gives us a clean non-interactive
+          # non-login shell on the remote — bypasses any .bash_profile/.bashrc
+          # auto-deploy hooks that polluted the previous SCP attempt.
+          cat > /tmp/remote.sh <<REMOTE
           set -e
+          echo "$ENV_B64" | base64 -d > ~/.swissalytics.env
           chmod 600 ~/.swissalytics.env
 
-          IMAGE=$(docker inspect swissalytics --format '{{.Config.Image}}')
-          EXISTING_GOOGLE_KEY=$(docker inspect swissalytics --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^GOOGLE_PAGESPEED_API_KEY=' | cut -d= -f2- || true)
+          IMAGE=\$(docker inspect swissalytics --format '{{.Config.Image}}')
+          EXISTING_GOOGLE_KEY=\$(docker inspect swissalytics --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^GOOGLE_PAGESPEED_API_KEY=' | cut -d= -f2- || true)
 
           docker stop swissalytics 2>/dev/null || true
           docker rm swissalytics 2>/dev/null || true
@@ -72,14 +67,17 @@ jobs:
             -p 80:3000 \
             -e NODE_ENV=production \
             -e ALLOWED_ORIGIN=https://swissalytics.com \
-            -e "GOOGLE_PAGESPEED_API_KEY=$EXISTING_GOOGLE_KEY" \
+            -e "GOOGLE_PAGESPEED_API_KEY=\$EXISTING_GOOGLE_KEY" \
             --env-file ~/.swissalytics.env \
-            "$IMAGE"
+            "\$IMAGE"
 
-          # Quick liveness probe inside the host
           sleep 3
           docker ps --filter name=swissalytics --format '{{.Names}} {{.Status}}'
           REMOTE
+
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -T \
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              bash -s < /tmp/remote.sh
 
       - name: Smoke test (Supabase wired)
         run: |
