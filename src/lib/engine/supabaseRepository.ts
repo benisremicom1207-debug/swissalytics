@@ -156,21 +156,22 @@ export class SupabaseReportsRepository implements ReportsRepository {
   }
 
   async purge(olderThanMs: number): Promise<number> {
-    const cutoff = new Date(Date.now() - olderThanMs).toISOString();
+    // Single Date.now() snapshot — keeps both statements consistent against
+    // the same "now" even though Supabase JS can't run them in one transaction.
+    const now = Date.now();
+    const cutoff = new Date(now - olderThanMs).toISOString();
+    const nowIso = new Date(now).toISOString();
 
-    // Delete reports older than cutoff
     const { count, error } = await this.client
       .from('reports')
       .delete({ count: 'exact' })
       .lt('created_at', cutoff);
     if (error) throw new Error(`supabase purge delete: ${error.message}`);
 
-    // Clear expired share tokens on remaining rows
-    const now = new Date().toISOString();
     const { error: clearError } = await this.client
       .from('reports')
       .update({ share_token: null, share_expires_at: null })
-      .lt('share_expires_at', now);
+      .lt('share_expires_at', nowIso);
     if (clearError) {
       throw new Error(`supabase purge clear-tokens: ${clearError.message}`);
     }

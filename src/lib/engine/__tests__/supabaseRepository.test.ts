@@ -7,7 +7,7 @@ const sampleStored: StoredReport = {
   url: 'https://pixelab.ch/',
   lang: 'fr',
   score: 72,
-  createdAt: 1746273600000, // 2026-05-03T12:00:00Z
+  createdAt: 1746273600000, // 2025-05-03T12:00:00Z
   crawlMs: 18234,
   shareToken: null,
   shareExpiresAt: null,
