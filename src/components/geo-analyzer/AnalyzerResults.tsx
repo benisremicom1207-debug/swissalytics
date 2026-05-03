@@ -8,15 +8,10 @@ import {
     BrainCircuit,
     CheckCircle2,
     ChevronRight,
-    Download,
     Layout,
-    Share2,
-    Shield,
-    Sparkles,
     Target,
     TrendingUp,
     AlertTriangle,
-    ExternalLink
 } from 'lucide-react';
 
 interface AnalyzerResultsProps {
@@ -27,12 +22,6 @@ const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-500';
     if (score >= 60) return 'text-yellow-500';
     return 'text-red-500';
-};
-
-const getScoreBg = (score: number) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
 };
 
 export default function AnalyzerResults({ result }: AnalyzerResultsProps) {
@@ -135,7 +124,7 @@ export default function AnalyzerResults({ result }: AnalyzerResultsProps) {
                     ].map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id as 'overview' | 'details' | 'roadmap')}
                             className={`flex-1 py-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors relative ${activeTab === tab.id ? 'text-white bg-white/5' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
@@ -237,7 +226,7 @@ function OverviewTab({ result }: { result: AnalysisResult }) {
                     </div>
 
                     <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/5 text-sm text-gray-300 text-center">
-                        "Avec ces optimisations, votre site sera référencé comme <span className="text-amber-400 font-semibold">source de confiance</span> par ChatGPT et Claude d'ici 90 jours."
+                        &quot;Avec ces optimisations, votre site sera référencé comme <span className="text-amber-400 font-semibold">source de confiance</span> par ChatGPT et Claude d&apos;ici 90 jours.&quot;
                     </div>
                 </div>
             </div>
@@ -357,16 +346,16 @@ function RoadmapTab({ result }: { result: AnalysisResult }) {
             </div>
 
             <div className="bg-gray-900 border border-white/10 rounded-2xl p-8 text-center">
-                <h4 className="text-2xl font-bold text-white mb-4">Besoin d'aide pour l'implémentation ?</h4>
+                <h4 className="text-2xl font-bold text-white mb-4">Besoin d&apos;aide pour l&apos;implémentation ?</h4>
                 <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-                    Notre équipe a déjà aidé plus de 50 PME suisses à optimiser leur présence GEO. Ne laissez pas vos concurrents prendre l'avance.
+                    Notre équipe a déjà aidé plus de 50 PME suisses à optimiser leur présence GEO. Ne laissez pas vos concurrents prendre l&apos;avance.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <button
                         onClick={() => window.print()}
                         className="px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors"
                     >
-                        Obtenir l'audit complet (PDF)
+                        Obtenir l&apos;audit complet (PDF)
                     </button>
                     <a
                         href="/portfolio"

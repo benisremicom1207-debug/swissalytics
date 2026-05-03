@@ -106,7 +106,7 @@ export async function analyzeSchemaOrg(url: string): Promise<SchemaOrgResult> {
     console.error('[Schema.org] Erreur:', error);
     
     // Fallback données simulées
-    return simulateSchemaData(url);
+    return simulateSchemaData();
   }
 }
 
@@ -308,7 +308,6 @@ export async function analyzeSchemaOrgMultiPage(baseUrl: string): Promise<Schema
   console.log(`[Schema.org Multi-Page] Analyse complète site ${baseUrl}...`);
   
   // Déterminer pages clés à analyser (optimisé pour détecter tous schemas)
-  const domain = new URL(baseUrl).hostname;
   const pagesToAnalyze = [
     baseUrl, // Homepage (Organization, FAQPage, WebSite)
     `${baseUrl}/team`, // Author/ProfilePage
@@ -398,7 +397,7 @@ export async function analyzeSchemaOrgMultiPage(baseUrl: string): Promise<Schema
 /**
  * Simulation données Schema.org (développement)
  */
-function simulateSchemaData(url: string): SchemaOrgResult {
+function simulateSchemaData(): SchemaOrgResult {
   return {
     score: 65,
     schemas: {

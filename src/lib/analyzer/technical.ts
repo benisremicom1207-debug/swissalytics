@@ -288,8 +288,6 @@ export async function analyzeTechnical($: CheerioAPI, pageUrl: string, html?: st
   // Check semantic HTML
   const hasNav = $('nav').length > 0;
   const hasMain = $('main').length > 0;
-  const hasHeader = $('header').length > 0;
-  const hasFooter = $('footer').length > 0;
 
   // HTTPS & mixed content
   const isHttps = pageUrl.startsWith('https://');

@@ -126,7 +126,7 @@ export async function assertSafeUrl(input: string): Promise<SsrfValidatedUrl> {
   }
 
   // Resolve and check every A/AAAA answer
-  let ips: string[] = [];
+  const ips: string[] = [];
   try {
     const [v4, v6] = await Promise.allSettled([
       dns.resolve4(hostname),

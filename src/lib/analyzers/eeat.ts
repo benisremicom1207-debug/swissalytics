@@ -88,7 +88,7 @@ export async function analyzeEEAT(url: string): Promise<EEATResult> {
     console.error('[E-E-A-T] Erreur:', error);
     
     // Fallback données simulées
-    return simulateEEATData(url);
+    return simulateEEATData();
   }
 }
 
@@ -133,17 +133,16 @@ async function analyzeTeamPage(baseUrl: string): Promise<{
                 authorElements = 1;
               }
             }
-          } catch (e) {
+          } catch {
             // Ignorer erreurs parsing
           }
         });
-        
+
         // Si pas de JSON-LD, chercher balises HTML classiques
         if (authorElements === 0) {
           authorElements = $('[itemtype*="Person"], .author, .team-member, .profile').length;
         }
-        
-        const hasPhotos = $('img[alt*="team" i], img[alt*="équipe" i], .team-member img, .profile img').length > 0;
+
         const hasBios = $('p').filter((_, el) => {
           const text = $(el).text();
           return text.length > 100 && /expert|spécialis|fondateur|ceo|directeur|cto|cmo/i.test(text);
@@ -310,11 +309,11 @@ async function analyzeTestimonials(baseUrl: string): Promise<{
                 hasSchema = true;
               }
             }
-          } catch (e) {
+          } catch {
             // Ignorer erreurs parsing
           }
         });
-        
+
         // Si pas de JSON-LD, chercher balises HTML classiques
         if (reviewCount === 0) {
           reviewCount = $('.testimonial, .review, .avis, [itemtype*="Review"]').length;
@@ -516,7 +515,7 @@ function generateEEATRecommendations(signals: EEATResult['signals']): string[] {
 /**
  * Simulation données E-E-A-T (développement)
  */
-function simulateEEATData(url: string): EEATResult {
+function simulateEEATData(): EEATResult {
   return {
     score: 52,
     signals: {

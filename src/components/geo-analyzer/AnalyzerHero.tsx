@@ -33,11 +33,11 @@ export default function AnalyzerHero({ url, setUrl, onAnalyze, loading, error }:
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
-                        <span className="text-sm font-medium text-gray-300">Nouvelle Génération d'Audit</span>
+                        <span className="text-sm font-medium text-gray-300">Nouvelle Génération d&apos;Audit</span>
                     </div>
 
                     <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6">
-                        L'excellence du Web <br />
+                        L&apos;excellence du Web <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DC2626] via-[#FF6B35] to-[#F59E0B]">
                             visible par les IA
                         </span>

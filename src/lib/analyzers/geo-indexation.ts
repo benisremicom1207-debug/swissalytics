@@ -15,7 +15,7 @@
  * Ajouter un nouveau LLM : voir /llm-providers/registry.ts
  */
 
-import { getLLMRegistry, testAllLLMs, LLMTestResult } from './llm-providers/registry';
+import { getLLMRegistry, testAllLLMs } from './llm-providers/registry';
 
 export interface GEOIndexationResult {
   score: number;
@@ -87,7 +87,7 @@ export async function analyzeGEOIndexation(url: string): Promise<GEOIndexationRe
     console.error('[GEO] Erreur:', error);
     
     // Fallback données simulées
-    return simulateGEOData(domain);
+    return simulateGEOData();
   }
 }
 
@@ -146,7 +146,7 @@ function generateGEORecommendations(
   }
   
   // Recommandations spécifiques par LLM non indexé
-  Object.entries(engines).forEach(([id, engine]) => {
+  Object.values(engines).forEach((engine) => {
     if (!engine.indexed && engine.name) {
       recs.push(`Optimisez pour ${engine.name} avec du contenu conversationnel de qualité`);
     }
@@ -158,7 +158,7 @@ function generateGEORecommendations(
 /**
  * Simulation données GEO (développement)
  */
-function simulateGEOData(domain: string): GEOIndexationResult {
+function simulateGEOData(): GEOIndexationResult {
   const registry = getLLMRegistry();
   
   return {

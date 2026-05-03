@@ -122,11 +122,7 @@ export function calculateCompositeScore(data: {
   
   // ========== RECOMMANDATIONS ==========
   
-  const recommendations = generateTopRecommendations(data, {
-    seoScore,
-    geoScore,
-    globalScore,
-  });
+  const recommendations = generateTopRecommendations(data);
   
   // ========== PROJECTION ==========
   
@@ -166,11 +162,6 @@ function generateTopRecommendations(
     geo: GEOIndexationResult;
     schema: SchemaOrgResult;
     eeat: EEATResult;
-  },
-  scores: {
-    seoScore: number;
-    geoScore: number;
-    globalScore: number;
   }
 ): Recommendation[] {
   const recs: Recommendation[] = [];

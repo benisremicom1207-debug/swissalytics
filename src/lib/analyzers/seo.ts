@@ -95,7 +95,7 @@ export async function analyzeSEO(url: string): Promise<SEOResult> {
     console.error('[SEO] Erreur:', error);
     
     // Fallback données simulées
-    return simulateSEOData(url);
+    return simulateSEOData();
   }
 }
 
@@ -285,7 +285,7 @@ function calculateSEOScore(data: {
 /**
  * Simulation données SEO (développement)
  */
-function simulateSEOData(url: string): SEOResult {
+function simulateSEOData(): SEOResult {
   return {
     score: 75,
     metaTags: {

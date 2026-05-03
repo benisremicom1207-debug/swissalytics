@@ -16,7 +16,7 @@ export default function CTABanner({ variant = 'inline', onExport }: CTABannerPro
             §99
           </span>
           <p className="text-[15px] leading-[1.45] text-ink max-w-[520px]">
-            Besoin d'un audit approfondi&nbsp;? Notre équipe chez{' '}
+            Besoin d&apos;un audit approfondi&nbsp;? Notre équipe chez{' '}
             <span className="font-semibold">Pixelab</span> construit des recommandations sur mesure.
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function CTABanner({ variant = 'inline', onExport }: CTABannerPro
             les <span className="italic font-semibold">fondamentaux</span>.
           </h4>
           <p className="text-[16px] leading-[1.5] text-ink-2 max-w-[460px]">
-            Pour un diagnostic approfondi — avec recommandations, priorisation et un plan d'action
+            Pour un diagnostic approfondi — avec recommandations, priorisation et un plan d&apos;action
             sur 3–6 mois — notre équipe vous accompagne.
           </p>
         </div>

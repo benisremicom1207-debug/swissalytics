@@ -107,6 +107,7 @@ import { QwenProvider } from './qwen';
 import { DeepSeekProvider } from './deepseek';
 import { BaiduErnieProvider } from './baidu-ernie';
 import { NaverClovaProvider } from './naver-clova';
+import { detectRegionFromDomain, getLLMsForRegion, getRegionConfig } from './geo-config';
 
 export const LLM_REGISTRY: LLMProvider[] = [
   // ===== TIER 1 : GLOBAUX (tous les marchés) =====
@@ -140,7 +141,6 @@ export function getLLMRegistry(url?: string): LLMRegistryConfig {
   // Si URL fournie, détecter région et filtrer LLMs pertinents
   if (url) {
     try {
-      const { detectRegionFromDomain, getLLMsForRegion, getRegionConfig } = require('./geo-config');
       const regionCode = detectRegionFromDomain(url);
       const regionConfig = getRegionConfig(regionCode);
       const relevantLLMIds = getLLMsForRegion(regionCode);

@@ -8,7 +8,6 @@ import AnalyzerLoading from '@/components/AnalyzerLoading';
 import ReportView from '@/components/report/ReportView';
 import Shell from '@/components/design-system/Shell';
 import { useTheme } from '@/components/design-system/ThemeProvider';
-import { COPY } from '@/lib/i18n/copy';
 import { Pixel } from '@/components/design-system/primitives';
 
 function isSelfAnalysis(input: string): boolean {
@@ -23,7 +22,6 @@ function isSelfAnalysis(input: string): boolean {
 
 export default function HomePage() {
   const { lang } = useTheme();
-  const copy = COPY[lang];
 
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);

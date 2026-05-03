@@ -58,7 +58,7 @@ export class BingCopilotProvider implements LLMProvider {
         r.url?.includes(domain) || r.name?.toLowerCase().includes(brandName.toLowerCase())
       ).length;
 
-      let indexed = domainInResults;
+      const indexed = domainInResults;
       let confidence: 'high' | 'medium' | 'low' | 'none' = 'none';
 
       if (indexed) {

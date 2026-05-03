@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Loader2, Circle, ShieldCheck, Search, Database, Gauge, Globe } from 'lucide-react';
+import { CheckCircle2, Loader2, ShieldCheck, Search, Database, Gauge, Globe } from 'lucide-react';
 
 interface AnalyzerLoadingProps {
     step: number;

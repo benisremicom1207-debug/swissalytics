@@ -21,7 +21,7 @@ export class BaiduErnieProvider implements LLMProvider {
     return hasAPIKey(this.apiKeyEnvVar!);
   }
 
-  async testIndexation(brandName: string, domain: string): Promise<LLMTestResult> {
+  async testIndexation(): Promise<LLMTestResult> {
     const apiKey = process.env[this.apiKeyEnvVar!];
     
     if (!apiKey) {
