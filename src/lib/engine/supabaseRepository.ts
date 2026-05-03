@@ -92,47 +92,41 @@ export class SupabaseReportsRepository implements ReportsRepository {
     return data ? rowToStored(data as ReportRow) : null;
   }
 
-  async getByShareToken(token: string): Promise<StoredReport | null> {
+  async getSharedReport(id: string): Promise<StoredReport | null> {
     const { data, error } = await this.client
       .from('reports')
       .select('*')
-      .eq('share_token', token)
+      .eq('id', id)
+      .gt('share_expires_at', new Date().toISOString())
       .maybeSingle();
-    if (error) throw new Error(`supabase getByShareToken: ${error.message}`);
-    if (!data) return null;
-    const stored = rowToStored(data as ReportRow);
-    if (stored.shareExpiresAt && stored.shareExpiresAt < Date.now()) {
-      return null;
-    }
-    return stored;
+    if (error) throw new Error(`supabase getSharedReport: ${error.message}`);
+    return data ? rowToStored(data as ReportRow) : null;
   }
 
-  async setShareToken(
+  async enableSharing(
     id: string,
-    token: string,
     expiresAt: number,
   ): Promise<StoredReport | null> {
     const { data, error } = await this.client
       .from('reports')
       .update({
-        share_token: token,
         share_expires_at: new Date(expiresAt).toISOString(),
       })
       .eq('id', id)
       .select('*')
       .maybeSingle();
-    if (error) throw new Error(`supabase setShareToken: ${error.message}`);
+    if (error) throw new Error(`supabase enableSharing: ${error.message}`);
     return data ? rowToStored(data as ReportRow) : null;
   }
 
-  async clearShareToken(id: string): Promise<StoredReport | null> {
+  async disableSharing(id: string): Promise<StoredReport | null> {
     const { data, error } = await this.client
       .from('reports')
-      .update({ share_token: null, share_expires_at: null })
+      .update({ share_expires_at: null })
       .eq('id', id)
       .select('*')
       .maybeSingle();
-    if (error) throw new Error(`supabase clearShareToken: ${error.message}`);
+    if (error) throw new Error(`supabase disableSharing: ${error.message}`);
     return data ? rowToStored(data as ReportRow) : null;
   }
 

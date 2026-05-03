@@ -15,25 +15,25 @@ export interface ReportsRepository {
   getById(id: string): Promise<StoredReport | null>;
 
   /**
-   * Fetch a report by share token.
-   * Implementations MUST respect `shareExpiresAt` — return null if expired.
-   */
-  getByShareToken(token: string): Promise<StoredReport | null>;
-
-  /**
-   * Attach or replace a share token + expiration on an existing report.
+   * Enable sharing on a report — sets `shareExpiresAt = expiresAt`.
    * Returns the updated StoredReport, or null if id not found.
    */
-  setShareToken(
-    id: string,
-    token: string,
-    expiresAt: number,
-  ): Promise<StoredReport | null>;
+  enableSharing(id: string, expiresAt: number): Promise<StoredReport | null>;
 
   /**
-   * Clear the share token (revoke sharing).
+   * Disable sharing — clears `shareExpiresAt`.
+   * Returns the updated StoredReport, or null if id not found.
    */
-  clearShareToken(id: string): Promise<StoredReport | null>;
+  disableSharing(id: string): Promise<StoredReport | null>;
+
+  /**
+   * Fetch a report by slug, BUT only if sharing is enabled and not expired.
+   * Used by the public /s/<slug> route. Returns null if:
+   *   - no row with that id
+   *   - shareExpiresAt is null (sharing disabled)
+   *   - shareExpiresAt < Date.now() (sharing expired)
+   */
+  getSharedReport(id: string): Promise<StoredReport | null>;
 
   /**
    * Find the most recent report for a (url, lang) pair created within `maxAgeMs`.

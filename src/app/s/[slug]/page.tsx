@@ -16,9 +16,9 @@ interface ApiOk {
 export default function SharedReportPage({
   params,
 }: {
-  params: Promise<{ token: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { token } = use(params);
+  const { slug } = use(params);
   const { lang } = useTheme();
   const [state, setState] = useState<
     | { kind: 'loading' }
@@ -30,7 +30,7 @@ export default function SharedReportPage({
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/share/${token}`);
+        const res = await fetch(`/api/share/${slug}`);
         if (!alive) return;
         if (!res.ok) {
           setState({ kind: 'error', status: res.status });
@@ -45,7 +45,7 @@ export default function SharedReportPage({
     return () => {
       alive = false;
     };
-  }, [token]);
+  }, [slug]);
 
   return (
     <Shell>
