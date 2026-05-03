@@ -29,6 +29,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [degraded, setDegraded] = useState<boolean>(false);
   const [error, setError] = useState('');
   const [loadingStep, setLoadingStep] = useState(0);
   const [cwvLoading, setCwvLoading] = useState(false);
@@ -62,6 +63,7 @@ export default function HomePage() {
     setError('');
     setResult(null);
     setReportId(null);
+    setDegraded(false);
     setLoadingStep(0);
 
     setTimeout(() => {
@@ -88,11 +90,12 @@ export default function HomePage() {
       }
 
       const data = await response.json();
-      // API now returns { reportId, report } — backward compatible with legacy { ...report }
+      // API now returns { reportId, report, degraded? } — backward compatible with legacy { ...report }
       const report: AnalysisResult = data.report ?? data;
-      const id: string | undefined = data.reportId;
+      const id: string | null | undefined = data.reportId;
       setResult(report);
-      if (id) setReportId(id);
+      setReportId(id ?? null);
+      setDegraded(Boolean(data.degraded));
       setCwvLoading(true);
 
       fetch('/api/geo-analyze', {
@@ -202,6 +205,7 @@ export default function HomePage() {
             report={result}
             reportId={reportId ?? undefined}
             cwvLoading={cwvLoading}
+            degraded={degraded}
           />
         </section>
       )}
