@@ -5,7 +5,7 @@ CREATE TABLE reports (
   id                  VARCHAR(64) PRIMARY KEY,            -- slug "pixelab-ch-a8x4"
   url                 TEXT NOT NULL,
   lang                CHAR(2) NOT NULL CHECK (lang IN ('fr','en')),
-  score               INTEGER NOT NULL,
+  score               INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   crawl_ms            INTEGER NOT NULL,
   share_token         VARCHAR(32) UNIQUE,
