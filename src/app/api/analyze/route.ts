@@ -134,6 +134,17 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-vercel-ip-country') ??
       null;
 
+    // hashIp throws if IP_HASH_SALT is missing/short — fail-open to keep
+    // the analyze endpoint working even on env-var misconfig.
+    let ipHashValue: string | null = null;
+    if (ip !== 'unknown') {
+      try {
+        ipHashValue = hashIp(ip);
+      } catch (err) {
+        console.error('[CRITICAL] hashIp failed (IP_HASH_SALT misconfigured?):', err);
+      }
+    }
+
     const stored: StoredReport = {
       id,
       url: canonicalUrl,
@@ -144,7 +155,7 @@ export async function POST(request: NextRequest) {
       shareToken: null,
       shareExpiresAt: null,
       data: report,
-      ipHash: ip !== 'unknown' ? hashIp(ip) : null,
+      ipHash: ipHashValue,
       country,
       userAgent,
       referrer,
