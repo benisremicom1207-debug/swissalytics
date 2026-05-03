@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { analyzePage } from '@/lib/analyzer';
 import { validateUrl } from '@/lib/security';
 import { checkRateLimit, getClientIp, RATE_LIMIT } from '@/lib/security/rateLimit';
-import { newReportId } from '@/lib/engine/ids';
+import { newReportSlug } from '@/lib/engine/slug';
 import { getReportsRepo, DEDUP_WINDOW_MS } from '@/lib/engine/repositoryInstance';
 import { cacheGet, cacheSet } from '@/lib/engine/cache';
+import { hashIp } from '@/lib/security/ipHash';
 import type { AnalysisReport, Lang, StoredReport } from '@/lib/engine/types';
+
+const SUPABASE_WRITE_TIMEOUT_MS = 3000;
 
 const CORS = {
   'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://swissalytics.com',
@@ -75,17 +78,27 @@ export async function POST(request: NextRequest) {
     // Cache-level dedup
     const cachedId = cacheGet(canonicalUrl, lang, DEDUP_WINDOW_MS);
     if (cachedId) {
-      const stored = await repo.getById(cachedId);
-      if (stored) {
-        return NextResponse.json(
-          { reportId: stored.id, report: stored.data, cached: true },
-          { headers: CORS },
-        );
+      try {
+        const stored = await repo.getById(cachedId);
+        if (stored) {
+          return NextResponse.json(
+            { reportId: stored.id, report: stored.data, cached: true },
+            { headers: CORS },
+          );
+        }
+      } catch (err) {
+        console.error('[CRITICAL] Supabase getById failed during cache lookup:', err);
+        // fall through to crawl path
       }
     }
 
-    // Repo-level dedup
-    const recent = await repo.findRecent(canonicalUrl, lang, DEDUP_WINDOW_MS);
+    // Repo-level dedup — fail-open: if Supabase fails, treat as cache-miss
+    let recent: StoredReport | null = null;
+    try {
+      recent = await repo.findRecent(canonicalUrl, lang, DEDUP_WINDOW_MS);
+    } catch (err) {
+      console.error('[CRITICAL] Supabase findRecent failed, fail-open mode:', err);
+    }
     if (recent) {
       cacheSet(canonicalUrl, lang, recent.id);
       return NextResponse.json(
@@ -104,7 +117,7 @@ export async function POST(request: NextRequest) {
     ]);
     const crawlMs = Date.now() - startedAt;
 
-    const id = newReportId();
+    const id = newReportSlug(canonicalUrl);
     const createdAt = Date.now();
     const report: AnalysisReport = {
       ...(result as AnalysisReport),
@@ -113,6 +126,14 @@ export async function POST(request: NextRequest) {
       lang,
       crawlMs,
     };
+
+    const userAgent = request.headers.get('user-agent') ?? null;
+    const referrer = request.headers.get('referer') ?? null;
+    const country =
+      request.headers.get('cf-ipcountry') ??
+      request.headers.get('x-vercel-ip-country') ??
+      null;
+
     const stored: StoredReport = {
       id,
       url: canonicalUrl,
@@ -123,12 +144,35 @@ export async function POST(request: NextRequest) {
       shareToken: null,
       shareExpiresAt: null,
       data: report,
+      ipHash: ip !== 'unknown' ? hashIp(ip) : null,
+      country,
+      userAgent,
+      referrer,
     };
-    await repo.save(stored);
-    cacheSet(canonicalUrl, lang, id);
+
+    let persistedId: string | null = id;
+    try {
+      await Promise.race([
+        repo.save(stored),
+        new Promise<never>((_, rej) =>
+          setTimeout(
+            () => rej(new Error(`supabase write timeout after ${SUPABASE_WRITE_TIMEOUT_MS}ms`)),
+            SUPABASE_WRITE_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+      cacheSet(canonicalUrl, lang, id);
+    } catch (err) {
+      console.error('[CRITICAL] Supabase write failed, fail-open mode:', err);
+      persistedId = null;
+    }
 
     return NextResponse.json(
-      { reportId: id, report },
+      {
+        reportId: persistedId,
+        report,
+        degraded: persistedId === null,
+      },
       {
         headers: {
           ...CORS,
