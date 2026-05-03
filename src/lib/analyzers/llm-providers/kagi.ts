@@ -59,7 +59,7 @@ export class KagiProvider implements LLMProvider {
 
       // Analyser la réponse
       const domainMentioned = answer.includes(domain.toLowerCase()) ||
-                              references.some((r: any) => r.url?.includes(domain));
+                              references.some((r: { url?: string }) => r.url?.includes(domain));
       const brandMentioned = answer.includes(brandName.toLowerCase());
 
       let indexed = false;
@@ -84,7 +84,7 @@ export class KagiProvider implements LLMProvider {
         mentions,
         confidence,
         metadata: {
-          sources: references.slice(0, 3).map((r: any) => r.url),
+          sources: references.slice(0, 3).map((r: { url?: string }) => r.url),
           responseTime: Date.now(),
         },
       };

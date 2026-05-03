@@ -128,7 +128,7 @@ async function analyzeTeamPage(baseUrl: string): Promise<{
               const json = JSON.parse(content);
               // Vérifier si c'est un tableau avec @graph
               if (json['@graph']) {
-                authorElements = json['@graph'].filter((item: any) => item['@type'] === 'Person').length;
+                authorElements = json['@graph'].filter((item: Record<string, unknown>) => item['@type'] === 'Person').length;
               } else if (json['@type'] === 'Person') {
                 authorElements = 1;
               }
@@ -299,7 +299,7 @@ async function analyzeTestimonials(baseUrl: string): Promise<{
               const json = JSON.parse(content);
               // Vérifier si c'est un tableau avec @graph
               if (json['@graph']) {
-                const reviews = json['@graph'].filter((item: any) => item['@type'] === 'Review');
+                const reviews = json['@graph'].filter((item: Record<string, unknown>) => item['@type'] === 'Review');
                 if (reviews.length > 0) {
                   reviewCount = reviews.length;
                   hasSchema = true;

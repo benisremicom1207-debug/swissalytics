@@ -74,7 +74,7 @@ export async function analyzeLinks($: CheerioAPI, pageUrl: string): Promise<Link
     baseHost = '';
   }
 
-  $('a[href]').each((_: number, el: any) => {
+  $('a[href]').each((_, el) => {
     const $el = $(el);
     const href = $el.attr('href') || '';
     const text = $el.text().trim();

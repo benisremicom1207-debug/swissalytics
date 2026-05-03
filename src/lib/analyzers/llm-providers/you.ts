@@ -58,7 +58,7 @@ export class YouProvider implements LLMProvider {
 
       // Analyser la réponse
       const domainMentioned = answer.includes(domain.toLowerCase()) || 
-                              webResults.some((r: any) => r.url?.includes(domain));
+                              webResults.some((r: { url?: string }) => r.url?.includes(domain));
       const brandMentioned = answer.includes(brandName.toLowerCase());
 
       let indexed = false;
@@ -83,7 +83,7 @@ export class YouProvider implements LLMProvider {
         mentions,
         confidence,
         metadata: {
-          sources: webResults.slice(0, 3).map((r: any) => r.url),
+          sources: webResults.slice(0, 3).map((r: { url?: string }) => r.url),
           responseTime: Date.now(),
         },
       };

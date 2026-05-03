@@ -29,7 +29,7 @@ export function analyzeImages($: CheerioAPI, baseUrl: string = ''): ImagesAnalys
   let missingLazy = 0;
   let modernFormatCount = 0;
 
-  $('img').each((i: number, el: any) => {
+  $('img').each((i, el) => {
     const $el = $(el);
     const rawSrc = $el.attr('src') || $el.attr('data-src') || '';
     const src = resolveUrl(rawSrc, baseUrl);

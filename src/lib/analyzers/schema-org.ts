@@ -12,6 +12,8 @@
 
 import * as cheerio from 'cheerio';
 
+type Schema = Record<string, unknown>;
+
 export interface SchemaOrgResult {
   score: number;
   schemas: {
@@ -24,12 +26,12 @@ export interface SchemaOrgResult {
   };
   totalFound: number;
   details: {
-    organization?: any;
-    author?: any;
-    faqPage?: any;
-    breadcrumb?: any;
-    article?: any;
-    website?: any;
+    organization?: Record<string, unknown>;
+    author?: Record<string, unknown>;
+    faqPage?: Record<string, unknown>;
+    breadcrumb?: Record<string, unknown>;
+    article?: Record<string, unknown>;
+    website?: Record<string, unknown>;
   };
   errors: string[];
   recommendations: string[];
@@ -130,15 +132,15 @@ async function fetchPageHTML(url: string): Promise<string> {
 /**
  * Extraire tous les JSON-LD de la page
  */
-function extractSchemas($: ReturnType<typeof cheerio.load>): any[] {
-  const schemas: any[] = [];
-  
+function extractSchemas($: ReturnType<typeof cheerio.load>): Schema[] {
+  const schemas: Schema[] = [];
+
   $('script[type="application/ld+json"]').each((_, el) => {
     try {
       const content = $(el).html();
       if (content) {
         const parsed = JSON.parse(content);
-        
+
         // Gérer @graph (multiples schemas dans un seul script)
         if (parsed['@graph']) {
           schemas.push(...parsed['@graph']);
@@ -150,14 +152,14 @@ function extractSchemas($: ReturnType<typeof cheerio.load>): any[] {
       console.error('[Schema.org] Erreur parsing JSON-LD:', error);
     }
   });
-  
+
   return schemas;
 }
 
 /**
  * Trouver schéma d'un type spécifique
  */
-function findSchemaType(schemas: any[], type: string): any | null {
+function findSchemaType(schemas: Schema[], type: string): Schema | null {
   return schemas.find(s => {
     const schemaType = s['@type'];
     if (Array.isArray(schemaType)) {
@@ -170,7 +172,7 @@ function findSchemaType(schemas: any[], type: string): any | null {
 /**
  * Valider schéma Organization
  */
-function validateOrganization(schema: any): string[] {
+function validateOrganization(schema: Schema): string[] {
   const errors: string[] = [];
   
   if (!schema.name) {
@@ -195,7 +197,7 @@ function validateOrganization(schema: any): string[] {
 /**
  * Valider schéma Author/Person
  */
-function validateAuthor(schema: any): string[] {
+function validateAuthor(schema: Schema): string[] {
   const errors: string[] = [];
   
   if (!schema.name) {
@@ -216,29 +218,30 @@ function validateAuthor(schema: any): string[] {
 /**
  * Valider schéma FAQPage
  */
-function validateFAQPage(schema: any): string[] {
+function validateFAQPage(schema: Schema): string[] {
   const errors: string[] = [];
-  
+
   if (!schema.mainEntity || !Array.isArray(schema.mainEntity)) {
     errors.push('FAQPage: propriété "mainEntity" (array) manquante');
   } else {
-    const questions = schema.mainEntity;
-    
+    const questions = schema.mainEntity as Array<Record<string, unknown>>;
+
     if (questions.length < 2) {
       errors.push('FAQPage: au moins 2 questions recommandées');
     }
-    
-    questions.forEach((q: any, i: number) => {
+
+    questions.forEach((q, i) => {
       if (!q.name) {
         errors.push(`FAQPage: question ${i + 1} sans "name" (question text)`);
       }
-      
-      if (!q.acceptedAnswer || !q.acceptedAnswer.text) {
+
+      const acceptedAnswer = q.acceptedAnswer as { text?: string } | undefined;
+      if (!acceptedAnswer || !acceptedAnswer.text) {
         errors.push(`FAQPage: question ${i + 1} sans "acceptedAnswer.text"`);
       }
     });
   }
-  
+
   return errors;
 }
 
@@ -367,11 +370,11 @@ export async function analyzeSchemaOrgMultiPage(baseUrl: string): Promise<Schema
   const totalFound = Object.values(aggregatedSchemas).filter(Boolean).length;
   
   // Agréger détails (prendre la meilleure instance de chaque schema)
-  const aggregatedDetails: any = {};
-  for (const key of Object.keys(aggregatedSchemas)) {
-    const bestResult = validResults.find(r => r.details[key as keyof typeof r.details]);
+  const aggregatedDetails: SchemaOrgResult['details'] = {};
+  for (const key of Object.keys(aggregatedSchemas) as Array<keyof SchemaOrgResult['details']>) {
+    const bestResult = validResults.find(r => r.details[key]);
     if (bestResult) {
-      aggregatedDetails[key] = bestResult.details[key as keyof typeof bestResult.details];
+      aggregatedDetails[key] = bestResult.details[key];
     }
   }
   

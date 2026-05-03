@@ -53,8 +53,8 @@ export class BingCopilotProvider implements LLMProvider {
       const results = data.webPages?.value || [];
 
       // Analyser les résultats
-      const domainInResults = results.some((r: any) => r.url?.includes(domain));
-      const mentions = results.filter((r: any) => 
+      const domainInResults = results.some((r: { url?: string; name?: string }) => r.url?.includes(domain));
+      const mentions = results.filter((r: { url?: string; name?: string }) => 
         r.url?.includes(domain) || r.name?.toLowerCase().includes(brandName.toLowerCase())
       ).length;
 
@@ -76,7 +76,7 @@ export class BingCopilotProvider implements LLMProvider {
         mentions,
         confidence,
         metadata: {
-          sources: results.slice(0, 3).map((r: any) => r.url),
+          sources: results.slice(0, 3).map((r: { url?: string; name?: string }) => r.url),
           responseTime: Date.now(),
         },
       };

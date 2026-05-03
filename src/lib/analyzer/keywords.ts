@@ -46,14 +46,14 @@ const STOP_WORDS = new Set([
 
 function extractKeywords($: CheerioAPI): KeywordInfo[] {
   const titleText = $('title').text().trim();
-  const h1Text = $('h1').map((_: number, el: any) => $(el).text().trim()).get().join(' ');
-  const h2Text = $('h2').map((_: number, el: any) => $(el).text().trim()).get().join(' ');
-  const h3Text = $('h3').map((_: number, el: any) => $(el).text().trim()).get().join(' ');
+  const h1Text = $('h1').map((_, el) => $(el).text().trim()).get().join(' ');
+  const h2Text = $('h2').map((_, el) => $(el).text().trim()).get().join(' ');
+  const h3Text = $('h3').map((_, el) => $(el).text().trim()).get().join(' ');
   const metaDesc = $('meta[name="description"]').attr('content') || '';
 
-  const pText = $('p').map((_: number, el: any) => $(el).text().trim()).get().join(' ');
-  const liText = $('li').map((_: number, el: any) => $(el).text().trim()).get().join(' ');
-  const aText = $('a').map((_: number, el: any) => $(el).text().trim()).get().join(' ');
+  const pText = $('p').map((_, el) => $(el).text().trim()).get().join(' ');
+  const liText = $('li').map((_, el) => $(el).text().trim()).get().join(' ');
+  const aText = $('a').map((_, el) => $(el).text().trim()).get().join(' ');
 
   const weightedText = [
     ...Array(4).fill(titleText),
@@ -95,12 +95,12 @@ export function analyzeKeywords($: CheerioAPI): KeywordsAnalysis {
 
   // Get raw text from content elements (NOT using $.remove())
   const titleText = $('title').text().trim().toLowerCase();
-  const h1Text = $('h1').map((_: number, el: any) => $(el).text().trim()).get().join(' ').toLowerCase();
+  const h1Text = $('h1').map((_, el) => $(el).text().trim()).get().join(' ').toLowerCase();
   const metaDesc = ($('meta[name="description"]').attr('content') || '').toLowerCase();
 
   // Extract body text from meaningful elements for first 100 words check
   const bodyParts: string[] = [];
-  $('p, li, td, blockquote').each((_: number, el: any) => {
+  $('p, li, td, blockquote').each((_, el) => {
     bodyParts.push($(el).text().trim());
   });
   const bodyText = bodyParts.join(' ').toLowerCase();
