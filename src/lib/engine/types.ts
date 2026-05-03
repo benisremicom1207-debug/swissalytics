@@ -32,6 +32,9 @@ export type AnalysisReport = AnalysisResult & {
 /**
  * Shape persisted by the repository.
  * Plain fields are indexable columns; the full report lives in `data`.
+ *
+ * The retargeting metadata fields (ipHash, country, userAgent, referrer)
+ * are optional — older reports created before Phase 1 may lack them.
  */
 export interface StoredReport {
   id: string;
@@ -43,6 +46,12 @@ export interface StoredReport {
   shareToken: string | null;
   shareExpiresAt: number | null; // unix ms
   data: AnalysisReport; // full JSON blob
+
+  // Métadonnées retargeting (Phase 1) — optionnelles pour rétro-compat
+  ipHash?: string | null;
+  country?: string | null;
+  userAgent?: string | null;
+  referrer?: string | null;
 }
 
 /** Minimal meta for list/recent queries */
