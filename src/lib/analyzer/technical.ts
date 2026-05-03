@@ -188,7 +188,7 @@ function analyzeCss($: CheerioAPI, baseUrl: string) {
 
   $('style').each(() => { inline++; });
 
-  $('link[rel="stylesheet"]').each((_: number, el: any) => {
+  $('link[rel="stylesheet"]').each((_, el) => {
     const href = $(el).attr('href') || '';
     if (!href) return;
     try {
@@ -212,7 +212,7 @@ function analyzeJs($: CheerioAPI, baseUrl: string) {
   let external = 0;
   let blocking = 0;
 
-  $('script').each((_: number, el: any) => {
+  $('script').each((_, el) => {
     const $el = $(el);
     const src = $el.attr('src');
     const isAsync = $el.attr('async') !== undefined;
@@ -288,8 +288,6 @@ export async function analyzeTechnical($: CheerioAPI, pageUrl: string, html?: st
   // Check semantic HTML
   const hasNav = $('nav').length > 0;
   const hasMain = $('main').length > 0;
-  const hasHeader = $('header').length > 0;
-  const hasFooter = $('footer').length > 0;
 
   // HTTPS & mixed content
   const isHttps = pageUrl.startsWith('https://');
@@ -302,7 +300,7 @@ export async function analyzeTechnical($: CheerioAPI, pageUrl: string, html?: st
 
   // Accessibility basics
   let missingFormLabels = 0;
-  $('input').each((_: number, el: any) => {
+  $('input').each((_, el) => {
     const $el = $(el);
     const inputType = ($el.attr('type') || '').toLowerCase();
     if (inputType === 'hidden' || inputType === 'submit' || inputType === 'button') return;
@@ -314,7 +312,7 @@ export async function analyzeTechnical($: CheerioAPI, pageUrl: string, html?: st
   });
 
   let missingButtonLabels = 0;
-  $('button').each((_: number, el: any) => {
+  $('button').each((_, el) => {
     const $el = $(el);
     const text = $el.text().trim();
     const hasAriaLabel = !!$el.attr('aria-label') || !!$el.attr('aria-labelledby');

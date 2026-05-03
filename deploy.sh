@@ -4,7 +4,7 @@
 
 set -e
 
-IMAGE="ghcr.io/benisremicom1207-debug/swissalytics:latest"
+IMAGE="ghcr.io/pixelab-ch/swissalytics:latest"
 CONTAINER_NAME="swissalytics"
 
 echo "=== Swissalytics Deploy ==="
@@ -27,6 +27,9 @@ docker run -d \
   -e NODE_ENV=production \
   -e ALLOWED_ORIGIN=https://swissalytics.com \
   -e GOOGLE_PAGESPEED_API_KEY="${GOOGLE_PAGESPEED_API_KEY:-}" \
+  -e SUPABASE_URL="${SUPABASE_URL:-}" \
+  -e SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}" \
+  -e IP_HASH_SALT="${IP_HASH_SALT:-}" \
   "$IMAGE"
 
 # Verify

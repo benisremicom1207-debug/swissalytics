@@ -7,7 +7,7 @@ function detectEEAT($: CheerioAPI): EEATSignals {
   let authorName: string | null = null;
 
   // Check JSON-LD for Person type
-  $('script[type="application/ld+json"]').each((_: number, el: any) => {
+  $('script[type="application/ld+json"]').each((_, el) => {
     try {
       const parsed = JSON.parse($(el).html() || '');
       const items = parsed['@graph'] || (Array.isArray(parsed) ? parsed : [parsed]);
@@ -66,7 +66,7 @@ function detectEEAT($: CheerioAPI): EEATSignals {
 
   // Trust links detection
   const allHrefs: string[] = [];
-  $('a[href]').each((_: number, el: any) => {
+  $('a[href]').each((_, el) => {
     allHrefs.push(($(el).attr('href') || '').toLowerCase());
   });
 
@@ -123,7 +123,7 @@ export function analyzeMetadata($: CheerioAPI, pageUrl: string = ''): MetadataAn
   const robots = $('meta[name="robots"]').attr('content') || $('meta[name="googlebot"]').attr('content') || null;
 
   const hreflang: { lang: string; href: string }[] = [];
-  $('link[rel="alternate"][hreflang]').each((_: number, el: any) => {
+  $('link[rel="alternate"][hreflang]').each((_, el) => {
     const lang = $(el).attr('hreflang') || '';
     const href = $(el).attr('href') || '';
     if (lang && href) {
@@ -133,7 +133,7 @@ export function analyzeMetadata($: CheerioAPI, pageUrl: string = ''): MetadataAn
 
   // Structured data (JSON-LD)
   const structuredTypes: string[] = [];
-  $('script[type="application/ld+json"]').each((_: number, el: any) => {
+  $('script[type="application/ld+json"]').each((_, el) => {
     try {
       const content = $(el).html() || '';
       const parsed = JSON.parse(content);

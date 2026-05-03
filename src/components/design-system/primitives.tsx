@@ -81,7 +81,7 @@ export function DisplayTitle({
   className?: string;
   style?: CSSProperties;
 }) {
-  const TagEl = Tag as any;
+  const TagEl = Tag as React.ElementType;
   return (
     <TagEl
       className={['display', className].filter(Boolean).join(' ')}

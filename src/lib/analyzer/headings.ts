@@ -33,7 +33,7 @@ export function analyzeHeadings($: CheerioAPI, primaryKeyword?: string): Heading
 
   const extract = (tag: string) => {
     const items: string[] = [];
-    $(tag).each((_: number, el: any) => {
+    $(tag).each((_, el) => {
       items.push($(el).text().trim());
     });
     return items;

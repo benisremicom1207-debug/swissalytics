@@ -17,6 +17,7 @@ import LinksTab from '../tabs/LinksTab';
 import TechnicalTab from '../tabs/TechnicalTab';
 import MetadataTab from '../tabs/MetadataTab';
 import ReadabilityTab from '../tabs/ReadabilityTab';
+import DegradedBanner from './DegradedBanner';
 
 /* ============================================================
    Types
@@ -27,6 +28,7 @@ interface ReportViewProps {
   reportId?: string;
   readOnly?: boolean;
   cwvLoading?: boolean;
+  degraded?: boolean;
 }
 
 type TabKey = 'overview' | 'details' | 'plan';
@@ -675,6 +677,7 @@ export default function ReportView({
   reportId,
   readOnly,
   cwvLoading,
+  degraded = false,
 }: ReportViewProps) {
   const { lang } = useTheme();
   const isFr = lang === 'fr';
@@ -798,6 +801,7 @@ export default function ReportView({
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px 80px' }}>
+      {degraded && <DegradedBanner isFr={isFr} />}
       {/* =====================================================
           1. MetricStrip
           ===================================================== */}

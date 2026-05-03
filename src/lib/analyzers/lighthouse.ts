@@ -130,7 +130,6 @@ async function estimatePerformance(url: string): Promise<LighthouseResult> {
  */
 function estimateSEOFromHTML(html: string): number {
   let score = 100;
-  const lowerHtml = html.toLowerCase();
 
   // Check for meta title
   if (!/<title[^>]*>.+<\/title>/i.test(html)) score -= 15;

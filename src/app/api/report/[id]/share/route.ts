@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { newShareToken } from '@/lib/engine/ids';
 import {
   getReportsRepo,
   SHARE_TOKEN_TTL_MS,
 } from '@/lib/engine/repositoryInstance';
 
 /**
- * POST /api/report/[id]/share  → mint or rotate a share token.
- * DELETE /api/report/[id]/share → revoke the current share token.
+ * POST /api/report/[id]/share  → enable sharing (sets 30d expiration).
+ * DELETE /api/report/[id]/share → disable sharing.
  */
 
 export async function POST(
@@ -22,17 +21,15 @@ export async function POST(
     return NextResponse.json({ error: 'Rapport introuvable' }, { status: 404 });
   }
 
-  const token = newShareToken();
   const expiresAt = Date.now() + SHARE_TOKEN_TTL_MS;
-  const updated = await repo.setShareToken(id, token, expiresAt);
+  const updated = await repo.enableSharing(id, expiresAt);
   if (!updated) {
     return NextResponse.json({ error: 'Rapport introuvable' }, { status: 404 });
   }
 
   return NextResponse.json({
-    token,
     expiresAt: new Date(expiresAt).toISOString(),
-    shareUrl: `/s/${token}`,
+    shareUrl: `/s/${id}`,
   });
 }
 
@@ -42,7 +39,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const repo = getReportsRepo();
-  const updated = await repo.clearShareToken(id);
+  const updated = await repo.disableSharing(id);
   if (!updated) {
     return NextResponse.json({ error: 'Rapport introuvable' }, { status: 404 });
   }

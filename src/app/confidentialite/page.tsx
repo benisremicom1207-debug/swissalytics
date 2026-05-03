@@ -21,25 +21,25 @@ export default function ConfidentialitePage() {
   const { lang } = useTheme();
   const isFr = lang === 'fr';
   const last = isFr
-    ? 'Dernière mise à jour : novembre 2025'
-    : 'Last updated: November 2025';
+    ? 'Dernière mise à jour : mai 2026'
+    : 'Last updated: May 2026';
 
   const summary: SummaryTile[] = isFr
     ? [
         { k: 'Compte', v: 'Aucun' },
         { k: 'Cookies', v: 'Aucun' },
-        { k: 'Partage', v: '30 jours' },
-        { k: 'Hébergement', v: 'Infomaniak · Suisse' },
-        { k: 'Logs', v: '24h en mémoire' },
         { k: 'Rapports', v: '180 jours max' },
+        { k: 'Partage', v: '30 jours' },
+        { k: 'IP', v: 'Hashée (HMAC-SHA-256)' },
+        { k: 'Hébergement', v: '100 % Suisse' },
       ]
     : [
         { k: 'Account', v: 'None' },
         { k: 'Cookies', v: 'None' },
-        { k: 'Sharing', v: '30 days' },
-        { k: 'Hosting', v: 'Infomaniak · Switzerland' },
-        { k: 'Logs', v: '24h in memory' },
         { k: 'Reports', v: '180 days max' },
+        { k: 'Sharing', v: '30 days' },
+        { k: 'IP', v: 'Hashed (HMAC-SHA-256)' },
+        { k: 'Hosting', v: '100% Swiss' },
       ];
 
   const sections: Section[] = isFr
@@ -51,8 +51,9 @@ export default function ConfidentialitePage() {
             <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
               <li>Aucun compte utilisateur, aucune inscription.</li>
               <li>Aucun cookie de tracking, aucun pixel publicitaire.</li>
-              <li>Aucune vente, aucun partage, aucune revente de données.</li>
+              <li>Aucune vente, aucun partage de données à des tiers.</li>
               <li>Aucun profilage, aucune publicité ciblée.</li>
+              <li>Aucune collecte de données nominatives (email, nom, téléphone).</li>
               <li>Aucune donnée transférée hors de Suisse.</li>
             </ul>
           ),
@@ -67,22 +68,33 @@ export default function ConfidentialitePage() {
               </p>
               <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
                 <li>
-                  <b>L&apos;URL que vous saisissez</b> — utilisée le temps de l&apos;analyse, puis
-                  stockée dans le rapport généré.
+                  <b>L&apos;URL que vous saisissez</b> et la langue d&apos;interface (fr/en).
                 </li>
                 <li>
-                  <b>Le rapport d&apos;analyse</b> — conservé <b>180 jours maximum</b>, puis purgé
-                  automatiquement.
+                  <b>Le rapport d&apos;analyse complet</b> (score, métadonnées techniques, plan
+                  d&apos;action) — conservé <b>180 jours maximum</b>, puis purgé automatiquement.
                 </li>
                 <li>
-                  <b>Un lien de partage</b> (si vous cliquez sur « Partager ») — expire au bout de{' '}
-                  <b>30 jours</b>, révocable manuellement à tout moment.
+                  <b>Une empreinte HMAC-SHA-256 de votre IP</b> avec sel serveur secret —
+                  non réversible, utilisée pour la sécurité et la mesure d&apos;usage agrégée.
                 </li>
                 <li>
-                  <b>Votre IP, pour le rate-limit</b> — conservée <b>24 h en mémoire vive</b>{' '}
+                  <b>Métadonnées techniques de la requête</b> : pays (code ISO déduit de
+                  l&apos;IP), <i>user-agent</i> du navigateur, page d&apos;origine
+                  (<i>referrer</i>) si fournie.
+                </li>
+                <li>
+                  <b>Un lien de partage</b> (si vous cliquez sur « Partager ») — expire au bout
+                  de <b>30 jours</b>, révocable manuellement à tout moment.
+                </li>
+                <li>
+                  <b>Votre IP brute, pour le rate-limit</b> — conservée <b>24 h en mémoire vive</b>
                   uniquement, jamais écrite sur disque, fenêtre glissante.
                 </li>
               </ul>
+              <p style={{ margin: '14px 0 0 0' }}>
+                Base légale : <b>intérêt légitime</b> (analytics produit et sécurité anti-abus).
+              </p>
             </>
           ),
         },
@@ -91,7 +103,9 @@ export default function ConfidentialitePage() {
           h: 'Hébergement',
           body: (
             <>
-              Hébergement exclusif en Suisse chez <b>Infomaniak Network SA</b>, Genève.
+              Application hébergée à Genève chez <b>Infomaniak Network SA</b>.
+              <br />
+              Base de données hébergée à Zurich par <b>Supabase</b> (région eu-central-2).
               <br />
               Aucune donnée ne transite via des serveurs hors du territoire suisse.
             </>
@@ -103,32 +117,28 @@ export default function ConfidentialitePage() {
           body: (
             <>
               <p style={{ margin: '0 0 14px 0' }}>
-                Trois durées de vie, appliquées automatiquement par le code&nbsp;:
+                Trois durées de vie, appliquées automatiquement par le code :
               </p>
               <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
                 <li>
-                  <b>Rapports d&apos;analyse</b> — conservés <b>180 jours maximum</b>, puis purgés
-                  automatiquement. Pas de rétention prolongée, pas d&apos;archivage « au cas où ».
+                  <b>Rapports d&apos;analyse et leurs métadonnées</b> (URL, score, IP hashée,
+                  pays, user-agent, referrer) — conservés <b>180 jours maximum</b>, puis
+                  purgés automatiquement. Pas de rétention prolongée, pas d&apos;archivage
+                  « au cas où ».
                 </li>
                 <li>
-                  <b>Liens de partage (share tokens)</b> — identifiant aléatoire (ex.{' '}
-                  <span
-                    className="mono"
-                    style={{ background: 'var(--sa-cream-2)', padding: '1px 6px' }}
-                  >
-                    r_a3f9k2
-                  </span>
-                  ) qui <b>expire après 30 jours</b>. Révocable manuellement à tout moment sur
+                  <b>Liens de partage (share tokens)</b> — identifiant aléatoire qui{' '}
+                  <b>expire après 30 jours</b>. Révocable manuellement à tout moment sur
                   simple demande.
                 </li>
                 <li>
                   <b>Rate-limit IP</b> — stockage <b>en mémoire vive uniquement</b>, aucune
-                  persistance disque, fenêtre glissante de <b>24 h</b>. Purgé à chaque redémarrage
-                  du serveur.
+                  persistance disque, fenêtre glissante de <b>24 h</b>. Purgé à chaque
+                  redémarrage du serveur.
                 </li>
               </ul>
               <p style={{ margin: '14px 0 0 0' }}>
-                Suppression immédiate d&apos;un rapport ou d&apos;un lien&nbsp;: écrivez à
+                Suppression immédiate d&apos;un rapport ou d&apos;un lien : écrivez à
                 l&apos;adresse ci-dessous.
               </p>
             </>
@@ -173,8 +183,9 @@ export default function ConfidentialitePage() {
             <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
               <li>No user accounts, no sign-up.</li>
               <li>No tracking cookies, no advertising pixels.</li>
-              <li>No data selling, sharing, or resale.</li>
+              <li>No data sales, no sharing with third parties.</li>
               <li>No profiling, no targeted advertising.</li>
+              <li>No collection of personally identifying data (email, name, phone).</li>
               <li>No data leaves Switzerland.</li>
             </ul>
           ),
@@ -189,22 +200,32 @@ export default function ConfidentialitePage() {
               </p>
               <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
                 <li>
-                  <b>The URL you enter</b> — used during the analysis, then stored inside the
-                  generated report.
+                  <b>The URL you enter</b> and your interface language (fr/en).
                 </li>
                 <li>
-                  <b>The analysis report</b> — kept <b>180 days maximum</b>, then
-                  auto-purged.
+                  <b>The full analysis report</b> (score, technical metadata, action plan) —
+                  kept <b>180 days maximum</b>, then auto-purged.
+                </li>
+                <li>
+                  <b>An HMAC-SHA-256 fingerprint of your IP</b> with server-side secret salt —
+                  non-reversible, used for security and aggregate usage measurement.
+                </li>
+                <li>
+                  <b>Request technical metadata</b>: country (ISO code from IP), browser{' '}
+                  <i>user-agent</i>, origin page (<i>referrer</i>) if provided.
                 </li>
                 <li>
                   <b>A share link</b> (if you click &quot;Share&quot;) — expires after{' '}
                   <b>30 days</b>, revocable manually at any time.
                 </li>
                 <li>
-                  <b>Your IP, for rate-limiting</b> — held <b>in-memory for 24h</b> only, never
-                  written to disk, on a rolling window.
+                  <b>Your raw IP, for rate-limiting</b> — held <b>in-memory for 24h</b> only,
+                  never written to disk, on a rolling window.
                 </li>
               </ul>
+              <p style={{ margin: '14px 0 0 0' }}>
+                Legal basis: <b>legitimate interest</b> (product analytics and abuse prevention).
+              </p>
             </>
           ),
         },
@@ -213,7 +234,9 @@ export default function ConfidentialitePage() {
           h: 'Hosting',
           body: (
             <>
-              Hosted exclusively in Switzerland by <b>Infomaniak Network SA</b>, Geneva.
+              Application hosted in Geneva by <b>Infomaniak Network SA</b>.
+              <br />
+              Database hosted in Zurich by <b>Supabase</b> (eu-central-2 region).
               <br />
               No data transits through servers outside Swiss territory.
             </>
@@ -229,18 +252,13 @@ export default function ConfidentialitePage() {
               </p>
               <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
                 <li>
-                  <b>Analysis reports</b> — kept <b>180 days maximum</b>, then auto-purged. No
+                  <b>Analysis reports and their metadata</b> (URL, score, hashed IP, country,
+                  user-agent, referrer) — kept <b>180 days maximum</b>, then auto-purged. No
                   extended retention, no &quot;just in case&quot; archiving.
                 </li>
                 <li>
-                  <b>Share tokens</b> — random ID (e.g.{' '}
-                  <span
-                    className="mono"
-                    style={{ background: 'var(--sa-cream-2)', padding: '1px 6px' }}
-                  >
-                    r_a3f9k2
-                  </span>
-                  ) that <b>expires after 30 days</b>. Revocable manually at any time on request.
+                  <b>Share tokens</b> — random ID that <b>expires after 30 days</b>.
+                  Revocable manually at any time on request.
                 </li>
                 <li>
                   <b>Rate-limit IP tracking</b> — stored <b>in-memory only</b>, no disk
@@ -321,8 +339,8 @@ export default function ConfidentialitePage() {
         <DisplayTitle
           parts={
             isFr
-              ? ['On ne stocke', ['rien', { red: '.' }]]
-              : ['We store', ['nothing', { red: '.' }]]
+              ? ['Le strict ', ['minimum', { red: '.' }]]
+              : ['Bare ', ['minimum', { red: '.' }]]
           }
           size="page"
         />
@@ -337,8 +355,8 @@ export default function ConfidentialitePage() {
           }}
         >
           {isFr
-            ? "La version courte : aucun compte, aucun tracker, aucun cookie, aucun partage. L'URL que vous entrez est analysée en direct et oubliée."
-            : 'Short version: no account, no trackers, no cookies, no sharing. The URL you enter is analysed live and forgotten.'}
+            ? "La version courte : aucun compte, aucun tracker, aucun cookie. Votre URL et son rapport technique sont conservés 180 jours puis supprimés. Votre IP est pseudonymisée par HMAC-SHA-256. Tout reste en Suisse."
+            : 'Short version: no account, no trackers, no cookies. Your URL and its technical report are kept for 180 days, then deleted. Your IP is pseudonymized via HMAC-SHA-256. Everything stays in Switzerland.'}
         </p>
 
         <div

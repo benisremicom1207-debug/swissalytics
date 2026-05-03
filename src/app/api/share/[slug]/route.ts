@@ -3,11 +3,11 @@ import { getReportsRepo } from '@/lib/engine/repositoryInstance';
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ token: string }> },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
-  const { token } = await params;
+  const { slug } = await params;
   const repo = getReportsRepo();
-  const stored = await repo.getByShareToken(token);
+  const stored = await repo.getSharedReport(slug);
   if (!stored) {
     return NextResponse.json(
       { error: 'Lien partagé introuvable ou expiré' },

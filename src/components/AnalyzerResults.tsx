@@ -14,7 +14,7 @@ import {
     BookOpen,
     Type,
     Settings,
-    Image,
+    Image as ImageIcon,
     Link2,
     FileText,
     Tag,
@@ -43,14 +43,6 @@ const getScoreBg = (score: number) => {
     if (score >= 80) return 'bg-status-success';
     if (score >= 60) return 'bg-status-warning';
     return 'bg-status-error';
-};
-
-const getScoreGrade = (score: number) => {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
-    return 'F';
 };
 
 function formatBytes(bytes: number): string {
@@ -269,7 +261,7 @@ function OverviewTab({ result }: { result: AnalysisResult }) {
                 {/* Images summary */}
                 <div className="bg-surface-secondary border border-border-primary rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-4">
-                        <Image className="w-4 h-4 text-text-tertiary" />
+                        <ImageIcon className="w-4 h-4 text-text-tertiary" />
                         <span className="text-sm font-medium text-text-tertiary">Images</span>
                     </div>
                     <div className="flex items-baseline gap-2 mb-2">
@@ -463,7 +455,7 @@ function DetailsTab({ result, cwvLoading }: { result: AnalysisResult; cwvLoading
 
     const sections = [
         { id: 'headings' as const, label: 'Headings', icon: Type, score: result.headings.score },
-        { id: 'images' as const, label: 'Images', icon: Image, score: result.images.score },
+        { id: 'images' as const, label: 'Images', icon: ImageIcon, score: result.images.score },
         { id: 'links' as const, label: 'Liens', icon: Link2, score: result.links.score },
         { id: 'technical' as const, label: 'Technique', icon: Settings, score: result.technical.score },
         { id: 'metadata' as const, label: 'Metadata', icon: Layout, score: result.metadata.score },
