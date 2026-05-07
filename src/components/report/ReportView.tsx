@@ -1007,7 +1007,6 @@ export default function ReportView({
         {tab === 'plan' && (
           <PlanContent
             copy={copy}
-            isFr={isFr}
             critItems={critItems}
             warnItems={warnItems}
             infoItems={infoItems}
@@ -1173,13 +1172,11 @@ function DetailsContent({
 
 function PlanContent({
   copy,
-  isFr,
   critItems,
   warnItems,
   infoItems,
 }: {
   copy: (typeof COPY)['fr'];
-  isFr: boolean;
   critItems: PlanItem[];
   warnItems: PlanItem[];
   infoItems: PlanItem[];
@@ -1260,21 +1257,6 @@ function PlanContent({
           >
             {copy.ctaBannerPrimary}
           </a>
-          <span
-            className="mono"
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'var(--sa-ink)',
-              borderBottom: '1px solid var(--sa-ink)',
-              paddingBottom: 2,
-              cursor: 'default',
-            }}
-          >
-            {isFr ? 'Exporter ce rapport →' : 'Export this report →'}
-          </span>
         </div>
       </div>
 
