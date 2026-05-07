@@ -47,6 +47,8 @@ export interface AccessibilityBasics {
   hasLangAttribute: boolean;
 }
 
+import type { GeoAnalysisResult } from './analyzers/types';
+
 export interface AnalysisResult {
   url: string;
   timestamp: string;
@@ -58,7 +60,8 @@ export interface AnalysisResult {
   technical: TechnicalAnalysis;
   metadata: MetadataAnalysis;
   readability: ReadabilityAnalysis;
-  geoAnalysis?: unknown;
+  /** Decorated async by `/api/geo-analyze` after the main /analyze response. */
+  geoAnalysis?: GeoAnalysisResult;
 }
 
 export interface HeadingsAnalysis {

@@ -6,7 +6,7 @@ import { analyzeGEOIndexation } from '@/lib/analyzers/geo-indexation';
 import { analyzeSchemaOrgMultiPage } from '@/lib/analyzers/schema-org';
 import { analyzeEEAT } from '@/lib/analyzers/eeat';
 import { calculateCompositeScore } from '@/lib/analyzers/composite-score';
-import type { AnalysisResult } from '@/components/geo-analyzer/types';
+import type { GeoAnalysisResult } from '@/lib/analyzers/types';
 
 const CORS = {
   'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://swissalytics.com',
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         warnings.push(lighthouse.warning || 'Scores Lighthouse estimés (pas de clé API Google PageSpeed)');
       }
 
-      const result: AnalysisResult = {
+      const result: GeoAnalysisResult = {
         url: validatedUrl,
         timestamp: new Date().toISOString(),
         globalScore: composite.globalScore,
