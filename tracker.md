@@ -165,6 +165,22 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : —
 
+### Phase 10 — Dédupliquer l'affichage des liens internes ☐
+**1 PR · ~1 h · indépendant**
+
+Dans l'onglet "Liens & navigation" (`LinksTab.tsx`), les URLs identiques apparaissent plusieurs fois (ex : `/services/`, `/contact/` listés 2-3× quand la page a header + footer + sous-nav). Le moteur compte correctement les occurrences DOM, mais l'affichage gagne en lisibilité avec dédup.
+
+- ☐ **10.1** Dans `LinksTab.tsx`, grouper par `href` (URL canonique). Afficher chaque URL une seule fois, avec :
+  - Liste des textes d'ancrage uniques (`Set<string>`) si plusieurs
+  - Compteur d'occurrences (`× 3`)
+  - Attributs (dofollow / nofollow / sponsored) — afficher l'union si conflit
+- ☐ **10.2** Same dédup pour les liens externes
+- ☐ **10.3** Backend (`lib/analyzer/links.ts`) reste inchangé — le total brut reste correct pour le score, c'est juste l'affichage qui change
+
+**Note** : naturellement intégré dans P5 si on rewrite `LinksTab` en brutalist v2 à ce moment-là. Si P5 vient avant P10, fusionner les deux. Si P10 arrive avant, garder isolé.
+
+**PR** : —
+
 ---
 
 ## Estimation totale
