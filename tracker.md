@@ -1,8 +1,8 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche** : `feat/analyzer-overhaul` (à créer depuis `main`)
+**Branche en cours** : à créer pour P1 (P0 mergée dans `main` via PR #2 le 2026-05-07)
 **Démarré** : 2026-05-04
-**Dernière maj** : 2026-05-04
+**Dernière maj** : 2026-05-07
 
 ## Légende
 - ☐ TODO
@@ -60,16 +60,16 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 ## Phases
 
-### Phase 0 — Hotfix prod ☐
-**1 PR · ~1 h · sans dépendance**
+### Phase 0 — Hotfix prod ✅
+**1 PR · sans dépendance · mergée 2026-05-07**
 **But** : arrêter le sang qui coule en prod.
 
-- ☐ **0.1** Fix `aiReadyScore` (`ReportView.tsx:768-771`) → lire `geoAnalysis.geo.score`
-- ☐ **0.2** Fix Bug A : `technical.ts:56` lit `GOOGLE_PAGESPEED_API_KEY` (au lieu de `PAGESPEED_API_KEY`)
-- ☐ **0.3** Retirer le faux bouton "Exporter ce rapport →" (`ReportView.tsx:1259-1273`)
-- ☐ **0.4** Smoke test prod, ship
+- ✅ **0.1** Fix `aiReadyScore` lit `geoAnalysis.geo.score` + loading state (animation `sa-flash` + scanner bar) pour éviter le flash 0→36 pendant le fetch async
+- ✅ **0.2** Fix Bug A : `technical.ts:56` lit `GOOGLE_PAGESPEED_API_KEY` (cohérent avec `lighthouse.ts`)
+- ✅ **0.3** Faux bouton "Exporter ce rapport →" retiré
+- ✅ **0.4** Smoke test prod : `/api/health` ok, `/api/analyze` pixelab.ch ok (score 84), `/api/analyze/cwv` swissinfo.ch retourne CWV mobile (perf=30, lcp=7s)
 
-**PR** : —
+**PR** : 🟢 #2 (squash-merged)
 
 ### Phase 1 — Typer geoAnalysis ☐
 **1 PR · ~3 h · bloque P2, P3**
