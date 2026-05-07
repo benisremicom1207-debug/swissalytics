@@ -1,27 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/design-system/ThemeProvider';
 import { COPY } from '@/lib/i18n/copy';
-import {
-  DisplayTitle,
-  scoreColor,
-  scoreGrade,
-} from '@/components/design-system/primitives';
-import { buildPlan, verdictOf, type PlanItem } from '@/lib/engine/plan';
+import { scoreColor } from '@/components/design-system/primitives';
+import { buildPlan, verdictOf } from '@/lib/engine/plan';
 import type { AnalysisResult, Issue } from '@/lib/types';
-import HeadingsTab from '../tabs/HeadingsTab';
-import ImagesTab from '../tabs/ImagesTab';
-import LinksTab from '../tabs/LinksTab';
-import TechnicalTab from '../tabs/TechnicalTab';
-import MetadataTab from '../tabs/MetadataTab';
-import ReadabilityTab from '../tabs/ReadabilityTab';
 import DegradedBanner from './DegradedBanner';
-
-/* ============================================================
-   Types
-   ============================================================ */
+import { Gauge } from './Gauge';
+import { Scorecard } from './Scorecard';
+import { ShareButton } from './ShareButton';
+import { OverviewContent } from './OverviewContent';
+import { DetailsContent, type DetailsSectionKey } from './DetailsContent';
+import { PlanContent } from './PlanContent';
 
 interface ReportViewProps {
   report: AnalysisResult;
@@ -32,17 +24,6 @@ interface ReportViewProps {
 }
 
 type TabKey = 'overview' | 'details' | 'plan';
-type SectionKey =
-  | 'headings'
-  | 'images'
-  | 'links'
-  | 'technical'
-  | 'metadata'
-  | 'readability';
-
-/* ============================================================
-   Helpers
-   ============================================================ */
 
 function truncateUrl(url: string, max = 48): string {
   if (!url) return '';
@@ -55,252 +36,10 @@ function parseTab(v: string | null): TabKey {
   return 'overview';
 }
 
-/* ============================================================
-   Gauge — pure inline SVG, no animation
-   ============================================================ */
-
-function Gauge({ score }: { score: number }) {
-  const r = 80;
-  const cx = 90;
-  const cy = 90;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference * (1 - Math.max(0, Math.min(100, score)) / 100);
-  const color = scoreColor(score);
-  const grade = scoreGrade(score);
-
-  return (
-    <div style={{ position: 'relative', width: 180, height: 180 }}>
-      <svg
-        width={180}
-        height={180}
-        viewBox="0 0 180 180"
-        aria-hidden
-        style={{ transform: 'rotate(-90deg)', display: 'block' }}
-      >
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="none"
-          stroke="var(--sa-rule)"
-          strokeWidth={6}
-        />
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={6}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="butt"
-        />
-      </svg>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 4,
-        }}
-      >
-        <span
-          className="display tnum"
-          style={{
-            fontSize: 72,
-            lineHeight: 1,
-            color,
-            letterSpacing: '-0.04em',
-            fontWeight: 800,
-          }}
-        >
-          {score}
-        </span>
-        <span
-          className="mono"
-          style={{
-            fontSize: 10,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--sa-ink-4)',
-            fontWeight: 700,
-          }}
-        >
-          / 100 · {grade}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   Scorecard — 4 dimension cards in MetricStrip right cell
-   ============================================================ */
-
-function Scorecard({
-  num,
-  label,
-  score,
-  isLast,
-}: {
-  num: string;
-  label: string;
-  /** null = data not yet available (async fetch in flight) → render loading state */
-  score: number | null;
-  isLast: boolean;
-}) {
-  const isLoading = score === null;
-  const color = isLoading ? 'var(--sa-ink-4)' : scoreColor(score);
-  return (
-    <div
-      style={{
-        padding: '28px 24px',
-        borderRight: isLast ? 'none' : '1px solid var(--sa-rule)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-      }}
-    >
-      <div
-        className="mono"
-        style={{
-          fontSize: 10,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          color: 'var(--sa-ink-4)',
-          fontWeight: 700,
-        }}
-      >
-        §{num} · {label}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-        <span
-          className="display tnum"
-          style={{
-            fontSize: 44,
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            color,
-            lineHeight: 1,
-            ...(isLoading ? { animation: 'sa-flash 1.4s ease-in-out infinite' } : {}),
-          }}
-        >
-          {isLoading ? '···' : score}
-        </span>
-        <span
-          className="mono"
-          style={{ fontSize: 11, color: 'var(--sa-ink-4)', fontWeight: 700 }}
-        >
-          /100
-        </span>
-      </div>
-      <div
-        style={{
-          position: 'relative',
-          height: 3,
-          background: 'rgba(10, 10, 10, 0.1)',
-          width: '100%',
-          overflow: 'hidden',
-        }}
-      >
-        {isLoading ? (
-          // Indeterminate scanner bar — slides left→right while data is loading
-          <div
-            style={{
-              position: 'absolute',
-              top: -1,
-              left: 0,
-              height: 5,
-              width: '40%',
-              background: 'var(--sa-ink-4)',
-              animation: 'sa-scorecard-scan 1.6s ease-in-out infinite',
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              position: 'absolute',
-              top: -1,
-              left: 0,
-              height: 5,
-              width: `${Math.max(0, Math.min(100, score))}%`,
-              background: color,
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   Share Button
-   ============================================================ */
-
-function ShareButton({ reportId, isFr }: { reportId: string; isFr: boolean }) {
-  const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [hover, setHover] = useState(false);
-
-  async function onShare() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/report/${reportId}/share`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error('share failed');
-      const data = (await res.json()) as { shareUrl?: string };
-      const shareUrl = data.shareUrl ?? '';
-      const full = `${window.location.origin}${shareUrl}`;
-      await navigator.clipboard.writeText(full);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // silent fail
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const baseLabel = isFr ? 'Partager' : 'Share';
-  const okLabel = isFr ? 'Copié ✓' : 'Copied ✓';
-
-  return (
-    <button
-      type="button"
-      onClick={onShare}
-      disabled={busy}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className="mono"
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        padding: '8px 14px',
-        border: '2px solid var(--sa-ink)',
-        background: hover ? 'var(--sa-ink)' : 'var(--sa-cream)',
-        color: hover ? 'var(--sa-cream)' : 'var(--sa-ink)',
-        cursor: busy ? 'wait' : 'pointer',
-        transition: 'background 120ms ease, color 120ms ease',
-      }}
-    >
-      {copied ? okLabel : baseLabel}
-    </button>
-  );
-}
-
-/* ============================================================
-   CaptionBar — mini variant that can host a right action
-   (inline so the share button can sit inside it)
-   ============================================================ */
-
+/**
+ * Inline since the share button needs to sit inside the right slot of the
+ * MetricStrip caption bar. Not reused elsewhere → no file split.
+ */
 function StripCaptionBar({
   left,
   right,
@@ -335,362 +74,6 @@ function StripCaptionBar({
   );
 }
 
-/* ============================================================
-   Sidebar nav entry (Details tab)
-   ============================================================ */
-
-function SectionNavEntry({
-  num,
-  label,
-  active,
-  onClick,
-}: {
-  num: string;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="mono"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%',
-        textAlign: 'left',
-        padding: '14px 16px',
-        borderLeft: `3px solid ${active ? 'var(--sa-red)' : 'transparent'}`,
-        borderTop: 'none',
-        borderRight: 'none',
-        borderBottom: 'none',
-        background: active ? 'var(--sa-cream-2)' : 'transparent',
-        color: 'var(--sa-ink)',
-        fontSize: 12,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        fontWeight: 700,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <span
-        className="tnum"
-        style={{ color: active ? 'var(--sa-red)' : 'var(--sa-ink-4)' }}
-      >
-        §{num}
-      </span>
-      <span style={{ color: 'var(--sa-ink)' }}>{label}</span>
-    </button>
-  );
-}
-
-/* ============================================================
-   Plan bucket renderer
-   ============================================================ */
-
-function PlanBucket({
-  captionNum,
-  label,
-  items,
-  dotColor,
-}: {
-  captionNum: string;
-  label: string;
-  items: PlanItem[];
-  dotColor: string;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <div className="frame" style={{ background: 'var(--sa-cream)' }}>
-      <div
-        className="ink-b mono"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '10px 20px',
-          background: 'var(--sa-ink)',
-          color: 'var(--sa-cream)',
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-        }}
-      >
-        <span style={{ color: dotColor }}>&#9679;</span>
-        <span>
-          §{captionNum} · {label} · {items.length}
-        </span>
-      </div>
-      <div>
-        {items.map((item, i) => (
-          <div
-            key={`${item.n}-${i}`}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '56px 1fr 80px',
-              gap: 16,
-              padding: '20px 24px',
-              borderBottom:
-                i < items.length - 1 ? '1px solid var(--sa-rule)' : 'none',
-              alignItems: 'start',
-            }}
-          >
-            <div
-              className="display tnum"
-              style={{
-                fontSize: 36,
-                fontWeight: 800,
-                color: 'var(--sa-ink-4)',
-                letterSpacing: '-0.03em',
-                lineHeight: 1,
-              }}
-            >
-              {String(item.n).padStart(2, '0')}
-            </div>
-            <div>
-              <div
-                style={{
-                  fontWeight: 600,
-                  color: 'var(--sa-ink)',
-                  fontSize: 15,
-                  marginBottom: 4,
-                  lineHeight: 1.35,
-                }}
-              >
-                {item.title}
-              </div>
-              <div
-                style={{
-                  color: 'var(--sa-ink-3)',
-                  fontSize: 14,
-                  lineHeight: 1.5,
-                }}
-              >
-                {item.body}
-              </div>
-              <div
-                className="mono"
-                style={{
-                  marginTop: 6,
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: 'var(--sa-ink-4)',
-                  fontWeight: 700,
-                }}
-              >
-                {item.category}
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <span
-                className="mono"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  fontWeight: 700,
-                  padding: '4px 8px',
-                  border: '1px solid var(--sa-ink-4)',
-                  color: 'var(--sa-ink)',
-                  alignSelf: 'flex-start',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {item.effort}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   Overview content — compact by design, the Details tab owns depth
-   ============================================================ */
-
-function OverviewStatCard({
-  num,
-  label,
-  value,
-  sub,
-}: {
-  num: string;
-  label: string;
-  value: string | number;
-  sub?: string;
-}) {
-  return (
-    <div
-      className="frame"
-      style={{
-        padding: '24px 24px 22px',
-        background: 'var(--sa-cream)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-      }}
-    >
-      <div
-        className="mono"
-        style={{
-          fontSize: 10,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          color: 'var(--sa-ink-4)',
-          fontWeight: 700,
-        }}
-      >
-        §{num} · {label}
-      </div>
-      <div
-        className="display tnum"
-        style={{
-          fontSize: 44,
-          fontWeight: 800,
-          letterSpacing: '-0.03em',
-          color: 'var(--sa-ink)',
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </div>
-      {sub && (
-        <div
-          className="mono"
-          style={{
-            fontSize: 11,
-            letterSpacing: '0.06em',
-            color: 'var(--sa-ink-3)',
-          }}
-        >
-          {sub}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function OverviewIssues({
-  issues,
-  isFr,
-}: {
-  issues: Array<Issue & { category: string }>;
-  isFr: boolean;
-}) {
-  const top = issues.slice(0, 7);
-  return (
-    <div className="frame" style={{ background: 'var(--sa-cream)' }}>
-      <div
-        className="ink-b mono"
-        style={{
-          padding: '10px 20px',
-          background: 'var(--sa-ink)',
-          color: 'var(--sa-cream)',
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-        }}
-      >
-        §06 · {isFr ? 'Problèmes prioritaires' : 'Top issues'} · {issues.length}
-      </div>
-      {top.length === 0 ? (
-        <div
-          style={{
-            padding: '24px',
-            color: 'var(--sa-ink-3)',
-            fontSize: 14,
-          }}
-        >
-          {isFr ? 'Aucun problème détecté.' : 'No issues detected.'}
-        </div>
-      ) : (
-        <div>
-          {top.map((iss, i) => {
-            const pillBg =
-              iss.type === 'error'
-                ? 'var(--sa-red)'
-                : iss.type === 'warning'
-                ? 'var(--sa-warn)'
-                : 'var(--sa-ink-4)';
-            const pillLabel =
-              iss.type === 'error'
-                ? isFr
-                  ? 'CRIT'
-                  : 'CRIT'
-                : iss.type === 'warning'
-                ? isFr
-                  ? 'WARN'
-                  : 'WARN'
-                : 'INFO';
-            return (
-              <div
-                key={`${iss.message}-${i}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '72px 1fr auto',
-                  gap: 16,
-                  padding: '14px 20px',
-                  borderBottom:
-                    i < top.length - 1 ? '1px solid var(--sa-rule)' : 'none',
-                  alignItems: 'center',
-                }}
-              >
-                <span
-                  className="mono"
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    letterSpacing: '0.12em',
-                    padding: '4px 8px',
-                    background: pillBg,
-                    color: 'var(--sa-cream)',
-                    textAlign: 'center',
-                  }}
-                >
-                  {pillLabel}
-                </span>
-                <span
-                  style={{
-                    color: 'var(--sa-ink)',
-                    fontSize: 14,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {iss.message}
-                </span>
-                <span
-                  className="mono"
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: 'var(--sa-ink-4)',
-                    fontWeight: 700,
-                  }}
-                >
-                  {iss.category}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ============================================================
-   ReportView
-   ============================================================ */
-
 export default function ReportView({
   report,
   reportId,
@@ -714,7 +97,7 @@ export default function ReportView({
       ...report.metadata.issues.map((i) => ({ ...i, category: isFr ? 'Métadonnées' : 'Metadata' })),
       ...report.readability.issues.map((i) => ({ ...i, category: isFr ? 'Lisibilité' : 'Readability' })),
       ...report.keywords.issues.map((i) => ({ ...i, category: isFr ? 'Contenu' : 'Content' })),
-    ];
+    ] satisfies Array<Issue & { category: string }>;
   }, [report, isFr]);
 
   const totalIssues = useMemo(
@@ -751,7 +134,7 @@ export default function ReportView({
   }
 
   // Details section
-  const [section, setSection] = useState<SectionKey>('headings');
+  const [section, setSection] = useState<DetailsSectionKey>('headings');
 
   // Verdict
   const verdict = verdictOf(report.score);
@@ -798,7 +181,7 @@ export default function ReportView({
     : ['Technical SEO', 'Content', 'AI-Ready', 'Local visibility'];
 
   // Section defs
-  const sectionDefs: Array<{ key: SectionKey; num: string; label: string }> = [
+  const sectionDefs: Array<{ key: DetailsSectionKey; num: string; label: string }> = [
     { key: 'headings', num: '01', label: isFr ? 'Structure sémantique' : 'Semantic structure' },
     { key: 'images', num: '02', label: isFr ? 'Images & médias' : 'Images & media' },
     { key: 'links', num: '03', label: isFr ? 'Liens & navigation' : 'Links & navigation' },
@@ -824,9 +207,7 @@ export default function ReportView({
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px 80px' }}>
       {degraded && <DegradedBanner isFr={isFr} />}
-      {/* =====================================================
-          1. MetricStrip
-          ===================================================== */}
+      {/* 1. MetricStrip */}
       <div className="frame sa-rise" style={{ background: 'var(--sa-cream)', position: 'relative' }}>
         <StripCaptionBar
           left={
@@ -895,49 +276,17 @@ export default function ReportView({
           </div>
 
           {/* RIGHT CELL — 4 scorecards */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-            }}
-          >
-            <Scorecard
-              num="02"
-              label={scorecardLabels[0]}
-              score={seoTechScore}
-              isLast={false}
-            />
-            <Scorecard
-              num="03"
-              label={scorecardLabels[1]}
-              score={contentScore}
-              isLast={false}
-            />
-            <Scorecard
-              num="04"
-              label={scorecardLabels[2]}
-              score={aiReadyScore}
-              isLast={false}
-            />
-            <Scorecard
-              num="05"
-              label={scorecardLabels[3]}
-              score={localScore}
-              isLast={true}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <Scorecard num="02" label={scorecardLabels[0]} score={seoTechScore} isLast={false} />
+            <Scorecard num="03" label={scorecardLabels[1]} score={contentScore} isLast={false} />
+            <Scorecard num="04" label={scorecardLabels[2]} score={aiReadyScore} isLast={false} />
+            <Scorecard num="05" label={scorecardLabels[3]} score={localScore} isLast={true} />
           </div>
         </div>
       </div>
 
-      {/* =====================================================
-          2. Verdict line
-          ===================================================== */}
-      <div
-        style={{
-          padding: '16px 24px',
-          borderBottom: '1px solid var(--sa-rule)',
-        }}
-      >
+      {/* 2. Verdict line */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--sa-rule)' }}>
         <p
           className="serif"
           style={{
@@ -954,9 +303,7 @@ export default function ReportView({
         </p>
       </div>
 
-      {/* =====================================================
-          3. Tab bar
-          ===================================================== */}
+      {/* 3. Tab bar */}
       <div
         role="tablist"
         className="mono"
@@ -999,9 +346,7 @@ export default function ReportView({
         })}
       </div>
 
-      {/* =====================================================
-          4. Tab content
-          ===================================================== */}
+      {/* 4. Tab content */}
       <div style={{ paddingTop: 32 }}>
         {tab === 'overview' && (
           <OverviewContent
@@ -1031,272 +376,6 @@ export default function ReportView({
           />
         )}
       </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   Tab contents as sub-components
-   ============================================================ */
-
-function OverviewContent({
-  report,
-  headingsTotal,
-  allIssues,
-  isFr,
-}: {
-  report: AnalysisResult;
-  headingsTotal: number;
-  allIssues: Array<Issue & { category: string }>;
-  isFr: boolean;
-}) {
-  const sortedIssues = useMemo(() => {
-    const weight = (t: Issue['type']) => (t === 'error' ? 0 : t === 'warning' ? 1 : 2);
-    return [...allIssues].sort((a, b) => weight(a.type) - weight(b.type));
-  }, [allIssues]);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 16,
-        }}
-      >
-        <OverviewStatCard
-          num="03"
-          label={isFr ? 'Titres & hiérarchie' : 'Headings'}
-          value={headingsTotal}
-          sub={`H1 ${report.headings.h1.length} · H2 ${report.headings.h2.length} · H3 ${report.headings.h3.length}`}
-        />
-        <OverviewStatCard
-          num="04"
-          label={isFr ? 'Images' : 'Images'}
-          value={report.images.total}
-          sub={
-            isFr
-              ? `${report.images.withAlt} avec alt · ${report.images.withoutAlt} sans alt`
-              : `${report.images.withAlt} with alt · ${report.images.withoutAlt} without alt`
-          }
-        />
-        <OverviewStatCard
-          num="05"
-          label={isFr ? 'Liens' : 'Links'}
-          value={report.links.total}
-          sub={
-            isFr
-              ? `${report.links.internal.length} internes · ${report.links.external.length} externes`
-              : `${report.links.internal.length} internal · ${report.links.external.length} external`
-          }
-        />
-      </div>
-
-      <OverviewIssues issues={sortedIssues} isFr={isFr} />
-    </div>
-  );
-}
-
-function DetailsContent({
-  report,
-  cwvLoading,
-  section,
-  setSection,
-  sectionDefs,
-}: {
-  report: AnalysisResult;
-  cwvLoading?: boolean;
-  section: SectionKey;
-  setSection: (s: SectionKey) => void;
-  sectionDefs: Array<{ key: SectionKey; num: string; label: string }>;
-}) {
-  const [isNarrow, setIsNarrow] = useState(false);
-
-  useEffect(() => {
-    function handler() {
-      setIsNarrow(window.innerWidth < 768);
-    }
-    handler();
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-
-  const sidebarStyle: CSSProperties = isNarrow
-    ? {
-        display: 'flex',
-        gap: 0,
-        overflowX: 'auto',
-        borderBottom: '1px solid var(--sa-rule)',
-        marginBottom: 16,
-      }
-    : {
-        position: 'sticky',
-        top: 24,
-        alignSelf: 'start',
-        borderRight: '1px solid var(--sa-rule)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0,
-      };
-
-  const content = (() => {
-    switch (section) {
-      case 'headings':
-        return (
-          <HeadingsTab
-            data={report.headings}
-            keywords={report.keywords}
-            url={report.url}
-          />
-        );
-      case 'images':
-        return <ImagesTab data={report.images} />;
-      case 'links':
-        return <LinksTab data={report.links} />;
-      case 'technical':
-        return <TechnicalTab data={report.technical} cwvLoading={cwvLoading} />;
-      case 'metadata':
-        return <MetadataTab data={report.metadata} />;
-      case 'readability':
-        return <ReadabilityTab data={report.readability} />;
-      default:
-        return null;
-    }
-  })();
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: isNarrow ? '1fr' : '240px 1fr',
-        gap: 24,
-      }}
-    >
-      <nav style={sidebarStyle}>
-        {sectionDefs.map((s) => (
-          <SectionNavEntry
-            key={s.key}
-            num={s.num}
-            label={s.label}
-            active={section === s.key}
-            onClick={() => setSection(s.key)}
-          />
-        ))}
-      </nav>
-      <div>{content}</div>
-    </div>
-  );
-}
-
-function PlanContent({
-  copy,
-  critItems,
-  warnItems,
-  infoItems,
-}: {
-  copy: (typeof COPY)['fr'];
-  critItems: PlanItem[];
-  warnItems: PlanItem[];
-  infoItems: PlanItem[];
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-      {/* §99 CTA Banner */}
-      <div
-        className="frame"
-        style={{ background: 'var(--sa-cream)', padding: '40px 48px' }}
-      >
-        <div
-          className="mono"
-          style={{
-            fontSize: 11,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--sa-ink)',
-            fontWeight: 700,
-            marginBottom: 8,
-          }}
-        >
-          {copy.ctaBannerCaption}
-        </div>
-        <div
-          className="mono caption-red"
-          style={{
-            fontSize: 11,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--sa-red)',
-            fontWeight: 700,
-            marginBottom: 20,
-          }}
-        >
-          {copy.ctaBannerKicker}
-        </div>
-
-        <DisplayTitle parts={copy.ctaBannerTitle} size="sect" as="h2" />
-
-        <p
-          style={{
-            margin: '20px 0 28px 0',
-            fontSize: 17,
-            lineHeight: 1.55,
-            color: 'var(--sa-ink-3)',
-            maxWidth: 720,
-          }}
-        >
-          {copy.ctaBannerSub}
-        </p>
-
-        <div
-          style={{
-            display: 'flex',
-            gap: 20,
-            flexWrap: 'wrap',
-            alignItems: 'center',
-          }}
-        >
-          <a
-            href="https://pixelab.ch/contact"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mono"
-            style={{
-              background: 'var(--sa-ink)',
-              color: 'var(--sa-cream)',
-              padding: '14px 28px',
-              fontSize: 13,
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              border: '2px solid var(--sa-ink)',
-              textDecoration: 'none',
-              display: 'inline-block',
-            }}
-          >
-            {copy.ctaBannerPrimary}
-          </a>
-        </div>
-      </div>
-
-      {/* Buckets */}
-      <PlanBucket
-        captionNum="10"
-        label={copy.planBucketCrit}
-        items={critItems}
-        dotColor="var(--sa-red)"
-      />
-      <PlanBucket
-        captionNum="11"
-        label={copy.planBucketWarn}
-        items={warnItems}
-        dotColor="var(--sa-warn)"
-      />
-      <PlanBucket
-        captionNum="12"
-        label={copy.planBucketInfo}
-        items={infoItems}
-        dotColor="var(--sa-ink-4)"
-      />
     </div>
   );
 }

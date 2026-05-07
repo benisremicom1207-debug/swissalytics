@@ -71,15 +71,15 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟢 #2 (squash-merged)
 
-### Phase 1 — Typer geoAnalysis ☐
-**1 PR · ~3 h · bloque P2, P3**
+### Phase 1 — Typer geoAnalysis ✅
+**1 PR · mergée 2026-05-07 · débloque P2, P3**
 
-- ☐ **1.1** Déplacer `AnalysisResult` de `components/geo-analyzer/types.ts` → `lib/analyzers/types.ts`, renommer `GeoAnalysisResult`
-- ☐ **1.2** Remplacer `geoAnalysis?: unknown` par `geoAnalysis?: GeoAnalysisResult` dans `lib/types.ts`
-- ☐ **1.3** Supprimer tous les casts `as { score?: number }`
-- ☐ **1.4** Vérifier `tsc --noEmit` strict en CI
+- ✅ **1.1** `GeoAnalysisResult` créé dans `lib/analyzers/types.ts` avec sous-types complets (Lighthouse, GeoIndexation, GeoSchema, GeoEeat, recos, projection). Ancien fichier `components/geo-analyzer/types.ts` reste comme shim deprecated jusqu'à P6.
+- ✅ **1.2** `geoAnalysis?: unknown` → `geoAnalysis?: GeoAnalysisResult`
+- ✅ **1.3** Cast défensif `as { geo?: { score?: number } } | undefined` retiré de `ReportView.tsx`
+- ✅ **1.4** tsc --noEmit clean, lint clean, 16/16 tests pass. Smoke prod : `geo.score: 36` pour pixelab.ch via /api/geo-analyze.
 
-**PR** : —
+**PR** : 🟢 #3 (squash-merged)
 
 ### Phase 6 — Cleanup ☐
 **1 PR · ~2 h · parallélisable avec P1**
