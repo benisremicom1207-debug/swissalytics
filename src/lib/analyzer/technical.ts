@@ -53,7 +53,7 @@ async function fetchText(url: string, maxRedirects = 5): Promise<{ ok: boolean; 
 
 export async function fetchCoreWebVitals(url: string, strategy: 'mobile' | 'desktop' = 'mobile'): Promise<CwvMetrics | undefined> {
   try {
-    const apiKey = process.env.PAGESPEED_API_KEY;
+    const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;
     const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance${apiKey ? `&key=${apiKey}` : ''}`;
     console.log('[CWV] API key present:', !!apiKey);
     const res = await fetch(apiUrl, { signal: AbortSignal.timeout(30000) });
