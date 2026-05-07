@@ -82,13 +82,13 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 **PR** : 🟢 #3 (squash-merged)
 
 ### Phase 6 — Cleanup ☐
-**1 PR · ~2 h · parallélisable avec P1**
+**1 PR · 2026-05-07**
 
-- ☐ **6.1** Supprimer code mort : `components/AnalyzerResults.tsx`, `geo-analyzer/AnalyzerHero.tsx`, `geo-analyzer/AnalyzerLoading.tsx`, `geo-analyzer/AnalyzerResults.tsx`
-- ☐ **6.2** Supprimer `deploy.sh`, `Dockerfile` (s'il existe), références Docker/Jelastic dans README
-- ☐ **6.3** Découper `ReportView.tsx` (1298 L) → `report/Gauge.tsx`, `Scorecard.tsx`, `ShareButton.tsx`, `PlanBucket.tsx`, `OverviewContent.tsx`, `DetailsContent.tsx`, `PlanContent.tsx`
+- ✅ **6.1** Code mort supprimé (1207 lignes) : `components/AnalyzerResults.tsx`, dossier `geo-analyzer/` entier (AnalyzerHero, AnalyzerLoading, AnalyzerResults, types.ts shim deprecated de P1)
+- ✅ **6.2** `deploy.sh` + `Dockerfile` supprimés (fossiles Docker/Jelastic, plus utilisés depuis le passage à systemd). Pas de README à nettoyer.
+- ✅ **6.3** `ReportView.tsx` 1302 → 381 L (-71%). 7 fichiers extraits : `Gauge.tsx`, `Scorecard.tsx`, `ShareButton.tsx`, `PlanBucket.tsx`, `OverviewContent.tsx`, `DetailsContent.tsx`, `PlanContent.tsx`. `StripCaptionBar` reste inline (30 L, utilisé seulement dans ReportView).
 
-**PR** : —
+**PR** : 🟢 (en cours d'ouverture)
 
 ### Phase 2 — Persister geoAnalysis + CWV en async ☐
 **1 PR · ~5 h · dépend P1, bloque P3 et P4**
