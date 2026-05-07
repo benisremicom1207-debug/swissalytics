@@ -765,10 +765,14 @@ export default function ReportView({
   // Scorecards
   const seoTechScore = report.technical.score;
   const contentScore = report.readability.score;
-  const aiReadyScore =
-    report.geoAnalysis && typeof report.geoAnalysis === 'object' && 'score' in report.geoAnalysis
-      ? (Number((report.geoAnalysis as { score?: number }).score) || 0)
-      : 0;
+  // The /api/geo-analyze response shape is { globalScore, seo, geo: { score, ... }, ... }.
+  // The IA-Ready scorecard reflects the GEO pillar specifically (indexation IA + Schema +
+  // E-E-A-T), so we read geo.score — not globalScore (which mixes SEO into the composite).
+  const aiReadyScore = (() => {
+    const ga = report.geoAnalysis as { geo?: { score?: number } } | undefined;
+    const s = ga?.geo?.score;
+    return typeof s === 'number' ? s : 0;
+  })();
   const localScore = report.headings.score;
 
   const scorecardLabels = isFr
