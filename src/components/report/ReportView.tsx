@@ -149,10 +149,12 @@ function Scorecard({
 }: {
   num: string;
   label: string;
-  score: number;
+  /** null = data not yet available (async fetch in flight) → render loading state */
+  score: number | null;
   isLast: boolean;
 }) {
-  const color = scoreColor(score);
+  const isLoading = score === null;
+  const color = isLoading ? 'var(--sa-ink-4)' : scoreColor(score);
   return (
     <div
       style={{
@@ -184,9 +186,10 @@ function Scorecard({
             letterSpacing: '-0.03em',
             color,
             lineHeight: 1,
+            ...(isLoading ? { animation: 'sa-flash 1.4s ease-in-out infinite' } : {}),
           }}
         >
-          {score}
+          {isLoading ? '···' : score}
         </span>
         <span
           className="mono"
@@ -201,18 +204,34 @@ function Scorecard({
           height: 3,
           background: 'rgba(10, 10, 10, 0.1)',
           width: '100%',
+          overflow: 'hidden',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: -1,
-            left: 0,
-            height: 5,
-            width: `${Math.max(0, Math.min(100, score))}%`,
-            background: color,
-          }}
-        />
+        {isLoading ? (
+          // Indeterminate scanner bar — slides left→right while data is loading
+          <div
+            style={{
+              position: 'absolute',
+              top: -1,
+              left: 0,
+              height: 5,
+              width: '40%',
+              background: 'var(--sa-ink-4)',
+              animation: 'sa-scorecard-scan 1.6s ease-in-out infinite',
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: 'absolute',
+              top: -1,
+              left: 0,
+              height: 5,
+              width: `${Math.max(0, Math.min(100, score))}%`,
+              background: color,
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -768,10 +787,12 @@ export default function ReportView({
   // The /api/geo-analyze response shape is { globalScore, seo, geo: { score, ... }, ... }.
   // The IA-Ready scorecard reflects the GEO pillar specifically (indexation IA + Schema +
   // E-E-A-T), so we read geo.score — not globalScore (which mixes SEO into the composite).
-  const aiReadyScore = (() => {
+  // Returns null while geoAnalysis is still being fetched (async after main analyze) so the
+  // Scorecard can render a loading state instead of a misleading 0.
+  const aiReadyScore: number | null = (() => {
     const ga = report.geoAnalysis as { geo?: { score?: number } } | undefined;
-    const s = ga?.geo?.score;
-    return typeof s === 'number' ? s : 0;
+    if (!ga) return null;
+    return typeof ga.geo?.score === 'number' ? ga.geo.score : 0;
   })();
   const localScore = report.headings.score;
 

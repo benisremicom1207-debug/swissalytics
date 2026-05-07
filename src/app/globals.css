@@ -227,3 +227,9 @@ main, main * { backdrop-filter: none !important; }
   100% { stroke-dashoffset: 239; }
 }
 .sa-gauge-spin { animation: sa-gauge 3s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+/* Indeterminate scanner bar for loading scorecards (IA-Ready while /api/geo-analyze in flight) */
+@keyframes sa-scorecard-scan {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
