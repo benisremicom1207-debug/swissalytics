@@ -13,11 +13,46 @@ export interface KeywordPlacement {
   densityStatus: 'low' | 'optimal' | 'high';
   totalWords: number;
   keywordCount: number;
+  /**
+   * Brand name detected from the URL (P9.1) — surfaced separately in the UI
+   * because brand mentions ARE expected to be high but shouldn't drive SEO
+   * keyword targeting. Lets us tell the user "your brand is X, but your
+   * SEO target keywords are Y, Z" instead of conflating both.
+   */
+  brand?: string;
+  /** Number of times the brand was mentioned in body text (informational). */
+  brandMentions?: number;
+}
+
+/**
+ * One of the top-N keyword targets for the page (P13). The primary target
+ * mirrors `placement` (kept for backward compat with consumers that only
+ * needed the #1 keyword); secondary targets surface adjacent themes a
+ * page actually targets ("internet" + "mobile" + "calls" on a telco).
+ *
+ * Each target carries its own placement check so the UI can show "this
+ * theme is in your title? in your H1?" per-keyword, matching how SEO
+ * teams plan around 1 primary + 2-3 secondary keywords per page.
+ */
+export interface KeywordTarget {
+  word: string;
+  /** Composite weighted score from the extractor (P9.4 + P9.2). */
+  score: number;
+  inTitle: boolean;
+  inH1: boolean;
+  inMetaDescription: boolean;
+  inFirst100Words: boolean;
 }
 
 export interface KeywordsAnalysis {
   keywords: KeywordInfo[];
   placement: KeywordPlacement | null;
+  /**
+   * Top-3 deduplicated keyword targets (P13). targets[0] always corresponds
+   * to placement.primary when both are non-null.
+   * Empty when placement is null (no keywords detected at all).
+   */
+  targets: KeywordTarget[];
   issues: Issue[];
 }
 

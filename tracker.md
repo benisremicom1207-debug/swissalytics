@@ -1,6 +1,6 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : `feat/p3-geo-visualization` (P0/P1/P2/P6/P11/P12 mergées sur `main`)
+**Branche en cours** : `feat/p9-keyword-v2` (P0/P1/P2/P3/P6/P11/P12 mergées sur `main`)
 **Démarré** : 2026-05-04
 **Dernière maj** : 2026-05-09
 
@@ -161,15 +161,37 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : —
 
+### Phase 13 — Multi-keyword targets (top 3) ☐
+**Bundlée dans la PR #9 · 2026-05-09**
+
+Découvert immédiatement après P9 : les sites réels (salt.ch fait internet + mobile + abonnement) ont **plusieurs thèmes business**, pas un seul. Le primary unique masque cette réalité.
+
+- ✅ **13.1** Type `KeywordTarget` + helper `selectTopTargets(keywords, n)` qui dédoublonne par chevauchement lexical (skip si partage un mot avec un déjà sélectionné). Ainsi "internet" ⇒ "internet at maximum" droppé, "mobile" ⇒ "mobile subscription" droppé.
+- ✅ **13.2** `KeywordsAnalysis` gagne `targets: KeywordTarget[]`. Chaque target porte ses 4 placement booleans (`inTitle`, `inH1`, `inMetaDescription`, `inFirst100Words`).
+- ✅ **13.3** UI : 3 chips au-dessus du card "Placement" existant. Primary tint vert, secondaires neutres. Chaque chip = nom + score + 4 mini-badges T/H1/M/100 verts si présents.
+- ✅ **13.4 Bonus** Stopwords allemands (60+ mots : der/die/das, und/oder, mit/für/von, ist/sind…) découverts en testant upc.ch (site germanophone) — `und`/`die`/`mit`/`bis` polluaient le top-12.
+
+**Smoke** sur upc.ch : top 3 = `sunrise`, `internet`, `tv entertainment` (UPC est rebrand Sunrise, contenu allemand). Avant : top 3 = `sunrise`, `und`, `internet` (`und` étant pollutant).
+
 ### Phase 9 — Keyword extraction v2 ☐
-**1 PR · ~4 h · indépendant — peut s'insérer après P0**
+**Bundlée dans la PR #9 · 2026-05-09**
 
-- ☐ **9.1** Brand exclusion : extraire domaine racine + variantes (`pixelab`, `pixelab-ch`, `pixelabch`), exclure des candidats
-- ☐ **9.2** Bigrammes/trigrammes : générer + scorer en parallèle (boost ×1.5 pour bigrammes, ×2 pour trigrammes)
-- ☐ **9.3** Stopwords étendus : noms réseaux/villes/pays/CTA génériques (linkedin, facebook, suisse, genève, contact, accueil, etc.)
-- ☐ **9.4** Pondération par position renforcée : remplacer la répétition `Array(N).fill()` par somme pondérée propre (title=10, h1=8, h2=4, meta=4, alt=3, body=1)
+Découvert pendant le smoke test P3 : sunrise.ch détectait "sunrise" comme mot-clé principal, avec issues absurdes ("brand absent du H1", "densité trop élevée 3.2%"). Refonte complète du moteur d'extraction.
 
-**PR** : —
+- ✅ **9.1** Brand exclusion + display séparé. Helpers `getBrandVariants(url)` (Set de mots dérivés du hostname à filtrer) + `getBrandPrincipal(url)` (label à afficher). `KeywordPlacement` gagne `brand?` + `brandMentions?`. UI : chip mono `§ marque détectée : sunrise (33×) — exclue du calcul SEO` sous le mot-clé principal dans `HeadingsTab`. 12 tests.
+- ✅ **9.2** Bigrammes + trigrammes. `extractNGrams(tokens, n, brandVariants)` glisse une fenêtre, exige que **first ET last token** soient candidats (rejette "à très haut" mais tolère "carte de fidélité" — internal stops OK). Boost ×1.5 bigrammes, ×2 trigrammes pour compenser leur rareté naturelle. 3 tests.
+- ✅ **9.3** Stopwords étendus (75+ mots) : CTA/nav (accueil, voir, lire, découvrir…), apostrophe artifacts (jusqu, aujourd, lorsqu…), social networks (linkedin, facebook, twitter, instagram…), time (maintenant, hier, demain…), English equivalents. **PAS de géographie** (suisse/paris/genève peuvent être de vrais targets — test pinne cette décision). 4 tests.
+- ✅ **9.4** Refactor pondération `Array(N).fill()` → somme pondérée explicite. `SECTION_WEIGHTS = { title: 10, h1: 8, h2: 4, meta: 4, h3: 2, body: 1 }` dans une const tunable. Tokenisation extraite dans helper réutilisable. 2 tests.
+
+**Smoke test live** sur `salt.ch` (fresh URL) :
+- Primary : `internet` (au lieu de `salt`)
+- Marque détectée : `salt (28×)` — exposée à part, exclue du calcul
+- Top 12 inclut bigrammes (`unlimited calls`, `mobile subscription`) et trigrammes (`internet at maximum`, `unlimited calls sms`)
+- Aucun CTA/social/time pollutant
+
+**Total tests** : 129/129 verts (+9 nouveaux fichier `keywords.test.ts`).
+
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 12 — Add Claude (Anthropic) provider ☐
 **1 PR · 2026-05-09 · indépendant · étend l'OQ1**

@@ -134,10 +134,65 @@ export default function HeadingsTab({ data, keywords, url }: { data: HeadingsAna
                 ]}
               />
             </h3>
+            {/* P13 — Top 3 distinct targets (chips). Each chip shows score
+                + 4 mini-badges T/H/M/F for placement at a glance. */}
+            {keywords.targets && keywords.targets.length > 1 && (
+              <div className="mb-4">
+                <div className="text-xs text-text-tertiary mb-2 font-mono uppercase tracking-wider">
+                  Top {keywords.targets.length} mots-clés distincts détectés
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {keywords.targets.map((t, i) => (
+                    <div
+                      key={t.word}
+                      className={`p-4 rounded-xl border ${i === 0 ? 'bg-status-success/5 border-status-success/30' : 'bg-surface-tertiary border-border-secondary'}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-text-tertiary font-mono uppercase tracking-wider">
+                          {i === 0 ? 'Principal' : `Secondaire ${i}`}
+                        </span>
+                        <span className="text-xs text-text-tertiary font-mono">
+                          score {t.score}
+                        </span>
+                      </div>
+                      <div className="text-base font-bold text-text-primary mb-3 truncate" title={t.word}>
+                        « {t.word} »
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { label: 'T', long: 'Title', ok: t.inTitle },
+                          { label: 'H1', long: 'H1', ok: t.inH1 },
+                          { label: 'M', long: 'Meta description', ok: t.inMetaDescription },
+                          { label: '100', long: '100 premiers mots', ok: t.inFirst100Words },
+                        ].map((b) => (
+                          <span
+                            key={b.label}
+                            title={`${b.long} : ${b.ok ? 'présent' : 'absent'}`}
+                            className={`inline-flex items-center justify-center w-7 h-6 text-xs font-bold font-mono rounded ${b.ok ? 'bg-status-success/15 text-status-success' : 'bg-status-error/10 text-status-error'}`}
+                          >
+                            {b.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-5 mb-4">
-              <div className="text-sm text-text-tertiary mb-3">
+              <div className="text-sm text-text-tertiary mb-1">
                 Mot-clé détecté : <span className="font-bold text-text-primary">« {keywords.placement.primary} »</span>
               </div>
+              {keywords.placement.brand && (
+                <div className="text-xs text-text-tertiary mb-3 font-mono uppercase tracking-wider">
+                  § Marque détectée : <span className="font-bold">{keywords.placement.brand}</span>
+                  {typeof keywords.placement.brandMentions === 'number' && keywords.placement.brandMentions > 0 && (
+                    <> ({keywords.placement.brandMentions}×)</>
+                  )}
+                  {' — exclue du calcul SEO'}
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                   { label: 'Title', ok: keywords.placement.inTitle },
