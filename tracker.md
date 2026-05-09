@@ -119,16 +119,22 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟡 (en cours d'ouverture)
 
-### Phase 4 — Plan unifié ✅
-**1 PR · 2026-05-09 · dépend P2**
+### Phase 4 — Plan unifié + Quality fixes ✅
+**1 PR · 2026-05-10 · dépend P2**
 
+**P4 (cœur)** :
 - ✅ **4.1** `buildPlan()` absorbe désormais `geoAnalysis.recommendations` via un nouveau collector `collectGeoRecs()` (catégories `SEO IA` / `GEO IA`)
 - ✅ **4.2** Mapping priority → severity : `critical|high → error/crit`, `medium → warning/warn`, `low → info/info` ; difficulty `low|medium|high → S|M|L`
 - ✅ **4.3** `sortWeight()` unifié : geo `impact × 5` (25..150) vs natif `nativeImpactScore` (10..115), sort dans chaque bucket par poids desc
 
-**Tests** : 19 nouveaux tests dans `src/lib/engine/__tests__/plan.test.ts` (regression natif + integration geo + mapping priorité + mapping difficulté + sort order mixte). Total : 157/157 ✅
+**Quality fixes bundlés (déclenchés par smoke tests P4)** :
+- ✅ **EEAT multilingue** : regex étendue DE (`kontakt`, `hilfe`, `impressum`, `datenschutz`, `agb`…), IT (`contatti`, `aiuto`, `note-legali`…), FR (`aide`, `support`), EN (`help`, `customer-service`) + détection `tel:`/`mailto:` comme signal contact + boundary regex tolère `data-privacy`, `customer-contact`. **Fix Swisscom** (faux positifs "no contact / no legal").
+- ✅ **Détection SPA tri-état** : `verdict: 'spa-shell' | 'styled-divs' | 'normal'`. Pure helper `detectSpa()` dans `src/lib/analyzer/spa-detection.ts` ; bandeau `SpaWarning` (FR/EN) intégré en haut de `HeadingsTab` + `GeoTabContent`. Explique pédagogiquement pourquoi 0 H1 = vrai problème GEO/IA même si Google rend JS au second crawl. **Fix GoMo** (semantic-HTML failure : div stylisés au lieu de h1).
+- ✅ **Stopwords pronoms 4 langues** : DE (`du`/`dich`/`dir`/`er`/`es`/`sie`…), FR (`je`/`tu`/`te`/`moi`/`toi`), EN (`mine`/`yours`/`myself`/`themselves`…), IT (corpus complet, langue 100% manquante avant). **Fix go-mo** (`dir` sortait en target).
 
-**PR** : 🟡 (en cours d'ouverture)
+**Tests** : +59 nouveaux tests (19 plan + 33 EEAT + 14 SPA + 6 stopwords pronouns). Total : **209/209 ✅**, tsc + lint clean.
+
+**PR** : 🟡 #10 (en cours de finalisation)
 
 ### Phase 5 — Porter onglets en brutalist v2 ☐
 **1 PR · ~10 h · 🎨 Validation visuelle requise**
