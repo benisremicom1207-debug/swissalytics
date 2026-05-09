@@ -35,7 +35,9 @@ export class MistralProvider implements LLMProvider {
     }
 
     try {
-      // Mistral API compatible OpenAI
+      // Mistral API (OpenAI-compatible). mistral-small-latest is the best
+      // model available on the free tier; mistral-large-latest requires a
+      // paid plan and returns 401/403 from a free key.
       const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -43,7 +45,7 @@ export class MistralProvider implements LLMProvider {
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'mistral-large-latest',
+          model: 'mistral-small-latest',
           messages: [
             {
               role: 'system',

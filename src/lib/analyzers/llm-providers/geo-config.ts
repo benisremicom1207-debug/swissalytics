@@ -58,6 +58,7 @@ export const REGION_CONFIGS: Record<RegionCode, RegionConfig> = {
       'perplexity',     // 28% (recherche académique, startups)
       'gemini',         // 18% (Google ecosystem)
       'bing-copilot',   // 8% (Microsoft entreprises)
+      'mistral',        // 3% (croissance EU, romandie)
       'you',            // 2% (early adopters)
       'kagi',           // 1% (tech community)
       'grok',           // 1% (tendance)
@@ -67,6 +68,7 @@ export const REGION_CONFIGS: Record<RegionCode, RegionConfig> = {
       'perplexity': 28,
       'gemini': 18,
       'bing-copilot': 8,
+      'mistral': 3,
       'you': 2,
       'kagi': 1,
       'grok': 1,
@@ -109,16 +111,16 @@ export const REGION_CONFIGS: Record<RegionCode, RegionConfig> = {
   'BE': {
     code: 'BE',
     name: 'Belgique 🇧🇪',
-    llmPriority: ['chatgpt', 'gemini', 'perplexity', 'bing-copilot', 'you'],
-    marketShare: { 'chatgpt': 40, 'gemini': 25, 'perplexity': 20, 'bing-copilot': 12, 'you': 3 },
+    llmPriority: ['chatgpt', 'gemini', 'perplexity', 'bing-copilot', 'mistral', 'you'],
+    marketShare: { 'chatgpt': 40, 'gemini': 25, 'perplexity': 20, 'bing-copilot': 12, 'mistral': 3, 'you': 3 },
     languages: ['fr', 'nl', 'en'],
   },
-  
+
   'LU': {
     code: 'LU',
     name: 'Luxembourg 🇱🇺',
-    llmPriority: ['chatgpt', 'perplexity', 'gemini', 'bing-copilot'],
-    marketShare: { 'chatgpt': 38, 'perplexity': 30, 'gemini': 20, 'bing-copilot': 12 },
+    llmPriority: ['chatgpt', 'perplexity', 'gemini', 'bing-copilot', 'mistral'],
+    marketShare: { 'chatgpt': 38, 'perplexity': 30, 'gemini': 20, 'bing-copilot': 12, 'mistral': 2 },
     languages: ['fr', 'de', 'en'],
     notes: 'Finance/banque → forte adoption Perplexity et ChatGPT.',
   },
@@ -416,6 +418,7 @@ export const REGION_CONFIGS: Record<RegionCode, RegionConfig> = {
       'bing-copilot',   // 12%
       'you',            // 5%
       'grok',           // 3%
+      'mistral',        // 2% (EU souveraineté)
       'kagi',           // 2%
       'qwen',           // 1%
     ],
@@ -426,6 +429,7 @@ export const REGION_CONFIGS: Record<RegionCode, RegionConfig> = {
       'bing-copilot': 12,
       'you': 5,
       'grok': 3,
+      'mistral': 2,
       'kagi': 2,
       'qwen': 1,
     },

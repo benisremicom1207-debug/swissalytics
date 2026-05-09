@@ -36,9 +36,10 @@ export class GeminiProvider implements LLMProvider {
     }
 
     try {
-      // Gemini API REST
+      // Gemini API REST — gemini-1.5-flash is the current free-tier model.
+      // gemini-pro was deprecated by Google in 2024 and now returns 404.
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: {

@@ -1,6 +1,6 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : `feat/p2-async-enrich` (P0/P1/P6 mergées sur `main`)
+**Branche en cours** : `feat/p11-llm-fixes` (P0/P1/P2/P6 mergées sur `main`)
 **Démarré** : 2026-05-04
 **Dernière maj** : 2026-05-09
 
@@ -164,6 +164,22 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 - ☐ **9.4** Pondération par position renforcée : remplacer la répétition `Array(N).fill()` par somme pondérée propre (title=10, h1=8, h2=4, meta=4, alt=3, body=1)
 
 **PR** : —
+
+### Phase 11 — Fixes LLM providers ☐
+**1 PR · 2026-05-09 · indépendant · débloque l'OQ1 partiellement**
+
+Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent l'indexation IA même quand les clés sont configurées correctement.
+
+- ✅ **11.1** `gemini.ts` : `gemini-pro` (déprécié par Google en 2024, retourne 404) → `gemini-1.5-flash` (free tier actuel). 5 tests unitaires (mock fetch, assert URL, branches indexed/not-indexed/error/missing-key).
+- ✅ **11.2** `mistral.ts` : `mistral-large-latest` (payant uniquement) → `mistral-small-latest` (meilleur modèle free tier). 5 tests unitaires.
+- ✅ **11.3** `geo-config.ts` : Mistral ajouté aux priorités régionales **CH**, **BE**, **LU**, **GLOBAL** (existait que pour FR). 5 tests dont 1 vérif round-trip que chaque `llmPriority` a son `marketShare` associé sur les 22 régions configurées.
+- ✅ **11.4** `chatgpt.ts` : modèle `gpt-4o` → `gpt-4o-mini`. ~50× moins cher (~$0.0001 vs ~$0.005 par analyse) pour une qualité équivalente sur la tâche de reconnaissance de marque. $5 de crédit OpenAI ≈ 50 000 analyses au lieu de ~1 000. 5 tests dont un pin du modèle pour éviter qu'un edit careless ne 50× la facture.
+
+**Smoke test live** : avec `GEMINI_API_KEY` + `MISTRAL_API_KEY` + `OPENAI_API_KEY` dans `.env.local`, `/api/geo-analyze` sur `pixelab.ch` retourne **3 moteurs testés** (Gemini + Mistral + ChatGPT) au lieu de 0 avant la PR. Score indexation : 67/100 (Mistral + ChatGPT connaissent pixelab avec `confidence: high`, Gemini non — vrai signal).
+
+**Note** : OQ1 partiellement résolue — Perplexity/Bing restent non testés faute de clés. Avec Gemini (gratuit) + Mistral (gratuit) + ChatGPT (~$5 dure des dizaines de milliers d'analyses), on couvre **environ 70% du marché IA en Suisse** (42% ChatGPT + 18% Gemini + 3% Mistral + petites diff selon adoption).
+
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 10 — Dédupliquer l'affichage des liens internes ☐
 **1 PR · ~1 h · indépendant**
