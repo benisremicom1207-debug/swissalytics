@@ -143,6 +143,66 @@ describe('Position weighting (P9.4)', () => {
   });
 });
 
+describe('Extended stopwords (P9.3)', () => {
+  it('filters social network names that appear on most sites as footer noise', () => {
+    const html = `
+      <html><body>
+      <p>Suivez-nous sur LinkedIn et Facebook. Notre page Twitter et Instagram.
+      Rejoignez-nous sur YouTube et TikTok. WhatsApp Telegram Snapchat. Linkedin Facebook.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    expect(words).not.toContain('linkedin');
+    expect(words).not.toContain('facebook');
+    expect(words).not.toContain('twitter');
+    expect(words).not.toContain('instagram');
+  });
+
+  it('filters CTA/nav generics (maintenant, voir, lire…)', () => {
+    const html = `
+      <html><body>
+      <p>Acheter maintenant. Voir tous les produits. Lire la suite. Découvrir maintenant.
+      Voir maintenant. Lire maintenant.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    expect(words).not.toContain('maintenant');
+    expect(words).not.toContain('voir');
+    expect(words).not.toContain('lire');
+    expect(words).not.toContain('découvrir');
+  });
+
+  it('filters apostrophe artifacts (jusqu, aujourd, lorsqu split off elision)', () => {
+    const html = `
+      <html><body>
+      <p>Jusqu'à 50% de réduction. Aujourd'hui seulement. Lorsqu'il arrive.
+      Jusqu'au 31 décembre. Aujourd'hui spécial.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    expect(words).not.toContain('jusqu');
+    expect(words).not.toContain('aujourd');
+    expect(words).not.toContain('lorsqu');
+  });
+
+  it('does NOT filter geography (could be a legit travel/local keyword)', () => {
+    const html = `
+      <html><head><title>Voyages en Suisse</title></head><body>
+      <h1>Voyages en Suisse</h1>
+      <p>Découvrez la Suisse. Visiter la Suisse. Voyage Suisse organisé.
+      La Suisse, ses montagnes, ses lacs. Suisse Suisse Suisse.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    // 'suisse' is a legit keyword for a travel site — must NOT be filtered
+    expect(words).toContain('suisse');
+  });
+});
+
 describe('N-gram extraction (P9.2)', () => {
   it('surfaces bigrams alongside unigrams in the keyword list', () => {
     const html = `

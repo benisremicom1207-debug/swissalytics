@@ -42,6 +42,24 @@ const STOP_WORDS = new Set([
   'header', 'footer', 'section', 'main', 'nav', 'div', 'span',
   'img', 'src', 'alt', 'href', 'rel', 'title', 'name', 'id',
   'localite', 'prix', 'display', 'none', 'flex', 'inline',
+  // P9.3 — CTA / nav / time / social-network noise. Excluded because
+  // they appear on virtually every site as filler, not as SEO targets.
+  // We deliberately do NOT include geography (suisse, paris, genève…)
+  // because those CAN be legitimate targets for travel/local sites.
+  // CTA + nav generics
+  'accueil', 'menu', 'plus', 'voir', 'lire', 'savoir', 'cliquer', 'cliquez',
+  'découvrir', 'decouvrir', 'découvrez', 'decouvrez', 'profitez', 'profiter',
+  // Apostrophe artifacts (French elision splits on quote/apostrophe)
+  'jusqu', 'aujourd', 'puisqu', 'lorsqu', 'qu',
+  // Time / vague time references
+  'maintenant', 'hier', 'demain', 'aujourdhui', 'bientôt', 'bientot',
+  'dernier', 'dernière', 'derniere', 'prochain', 'prochaine', 'récent', 'recent',
+  // Social networks (almost always footer/nav noise, not the page topic)
+  'linkedin', 'facebook', 'twitter', 'instagram', 'youtube', 'tiktok',
+  'whatsapp', 'telegram', 'snapchat', 'pinterest', 'reddit', 'discord',
+  // English filler equivalents
+  'click', 'learn', 'discover', 'read', 'now', 'today', 'yesterday', 'tomorrow',
+  'soon', 'recent', 'latest', 'new', 'menu', 'home', 'page',
 ]);
 
 /**
