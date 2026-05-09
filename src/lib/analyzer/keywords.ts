@@ -102,29 +102,25 @@ export function getBrandPrincipal(url: string | undefined): string | undefined {
   return first && first.length >= 2 ? first : undefined;
 }
 
-function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo[] {
-  const titleText = $('title').text().trim();
-  const h1Text = $('h1').map((_, el) => $(el).text().trim()).get().join(' ');
-  const h2Text = $('h2').map((_, el) => $(el).text().trim()).get().join(' ');
-  const h3Text = $('h3').map((_, el) => $(el).text().trim()).get().join(' ');
-  const metaDesc = $('meta[name="description"]').attr('content') || '';
+/**
+ * Per-position weighting (P9.4) — replaces the previous Array(N).fill pattern.
+ * Each section is tokenized once; word frequencies are summed weighted by
+ * position priority. Title/H1 dominate, body is the baseline.
+ *
+ * Weights are intentionally close to industry SEO heuristics (Yoast, Surfer)
+ * with title slightly boosted. Tunable in one place.
+ */
+const SECTION_WEIGHTS = {
+  title: 10,
+  h1: 8,
+  h2: 4,
+  meta: 4,
+  h3: 2,
+  body: 1,
+} as const;
 
-  const pText = $('p').map((_, el) => $(el).text().trim()).get().join(' ');
-  const liText = $('li').map((_, el) => $(el).text().trim()).get().join(' ');
-  const aText = $('a').map((_, el) => $(el).text().trim()).get().join(' ');
-
-  const weightedText = [
-    ...Array(4).fill(titleText),
-    ...Array(4).fill(h1Text),
-    ...Array(3).fill(h2Text),
-    ...Array(2).fill(h3Text),
-    ...Array(2).fill(metaDesc),
-    pText,
-    liText,
-    aText,
-  ].join(' ');
-
-  const words = weightedText
+function tokenize(text: string, brandVariants: Set<string>): string[] {
+  return text
     .toLowerCase()
     .replace(/[^a-zàâäéèêëïîôùûüÿç0-9\s-]/g, ' ')
     .split(/\s+/)
@@ -135,10 +131,26 @@ function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo
       !/^\d+$/.test(w) &&
       !/^[a-z]$/.test(w),
     );
+}
+
+function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo[] {
+  const sections: { text: string; weight: number }[] = [
+    { text: $('title').text().trim(), weight: SECTION_WEIGHTS.title },
+    { text: $('h1').map((_, el) => $(el).text().trim()).get().join(' '), weight: SECTION_WEIGHTS.h1 },
+    { text: $('h2').map((_, el) => $(el).text().trim()).get().join(' '), weight: SECTION_WEIGHTS.h2 },
+    { text: $('h3').map((_, el) => $(el).text().trim()).get().join(' '), weight: SECTION_WEIGHTS.h3 },
+    { text: $('meta[name="description"]').attr('content') || '', weight: SECTION_WEIGHTS.meta },
+    { text: $('p').map((_, el) => $(el).text().trim()).get().join(' '), weight: SECTION_WEIGHTS.body },
+    { text: $('li').map((_, el) => $(el).text().trim()).get().join(' '), weight: SECTION_WEIGHTS.body },
+    { text: $('a').map((_, el) => $(el).text().trim()).get().join(' '), weight: SECTION_WEIGHTS.body },
+  ];
 
   const freq: Record<string, number> = {};
-  for (const word of words) {
-    freq[word] = (freq[word] || 0) + 1;
+  for (const section of sections) {
+    const words = tokenize(section.text, brandVariants);
+    for (const word of words) {
+      freq[word] = (freq[word] || 0) + section.weight;
+    }
   }
 
   return Object.entries(freq)

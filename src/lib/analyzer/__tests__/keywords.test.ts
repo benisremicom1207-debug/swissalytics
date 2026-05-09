@@ -107,3 +107,33 @@ describe('analyzeKeywords with brand exclusion', () => {
     expect(issueMsgs.some((m) => m.includes('« sunrise »'))).toBe(false);
   });
 });
+
+describe('Position weighting (P9.4)', () => {
+  // Two keywords, each appears ONCE in different positions. Title/H1 weight
+  // (10/8) should beat body weight (1) — pinning the section weights.
+  const html = `
+    <html><head>
+      <title>Crypto trading platform</title>
+      <meta name="description" content="The best place to trade.">
+    </head><body>
+      <h1>Crypto trading platform</h1>
+      <p>Welcome. We have many words about cooking, baking, recipes,
+      ingredients, kitchen, oven, cooking, cooking, cooking, cooking,
+      cooking, cooking, cooking, cooking, cooking, cooking.</p>
+    </body></html>`;
+
+  it('title+H1 keywords outrank body-only keywords with equal raw frequency', () => {
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    // crypto appears 2× (title + h1) → 10 + 8 = 18 weighted
+    // cooking appears ~13× in body → 13 weighted
+    expect(result.placement?.primary).toBe('crypto');
+  });
+
+  it('body-only keywords still surface in the top 15', () => {
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    expect(words).toContain('cooking');
+  });
+});
