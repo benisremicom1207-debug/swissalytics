@@ -1,7 +1,7 @@
 import type { CheerioAPI } from './cheerio';
 import type { MetadataAnalysis, EEATSignals, Issue } from '../types';
 
-function detectEEAT($: CheerioAPI): EEATSignals {
+export function detectEEAT($: CheerioAPI): EEATSignals {
   // Author detection
   let hasAuthor = false;
   let authorName: string | null = null;
@@ -64,15 +64,74 @@ function detectEEAT($: CheerioAPI): EEATSignals {
     }
   }
 
-  // Trust links detection
+  // Trust links detection — multilingue (FR/EN/DE/IT) + tel:/mailto: signals.
+  // Why: many CH/EU sites use locale-specific paths (`hilfe`, `aiuto`,
+  // `kontakt`, `impressum`, `datenschutz`, `agb`) that the original
+  // FR/EN-only regex missed → false-positive "no contact / no legal" recos
+  // on multilingual sites like Swisscom. Help/support routes act as
+  // contact entry points for telcos & SaaS, so they count too.
   const allHrefs: string[] = [];
   $('a[href]').each((_, el) => {
     allHrefs.push(($(el).attr('href') || '').toLowerCase());
   });
 
-  const hasContactLink = allHrefs.some(h => /\/(contact|about|a-propos|qui-sommes-nous)/.test(h));
-  const hasPrivacyPolicy = allHrefs.some(h => /\/(privacy|confidentialite|politique-de-confidentialite|rgpd|donnees-personnelles)/.test(h));
-  const hasTermsOfService = allHrefs.some(h => /\/(mentions-legales|cgu|cgv|terms|legal|conditions)/.test(h));
+  // tel: and mailto: are direct contact signals (often present even when
+  // the footer with /contact links is JS-rendered and invisible to cheerio).
+  const hasDirectContactLink = allHrefs.some(h => h.startsWith('tel:') || h.startsWith('mailto:'));
+
+  // Path-segment match: keyword preceded by `/`, `-`, `_`, or string start,
+  // and followed by `/`, `.`, `?`, `#`, `-`, `_`, or end-of-string.
+  // - Allows `/contact-us` (trailing `-`), `/customer-contact` (leading `-`),
+  //   `/data-privacy` (compound paths used by enterprise sites).
+  // - Rejects `/contracts` (no `contact` literal), `/legalese` (`e` after
+  //   `legal` not in trailing class).
+  const pathSegment = (kw: string) => new RegExp(`(?:^|[/_-])${kw}(?:[/.?#_-]|$)`);
+  const matchesAny = (keywords: string[]) =>
+    allHrefs.some(h => keywords.some(kw => pathSegment(kw).test(h)));
+
+  const CONTACT_KEYWORDS = [
+    // FR
+    'contact', 'nous-contacter', 'contactez-nous', 'aide', 'support',
+    'a-propos', 'apropos', 'qui-sommes-nous', 'about',
+    // EN
+    'about-us', 'help', 'customer-service', 'customer-support',
+    // DE
+    'kontakt', 'hilfe', 'hilfe-center', 'hilfecenter', 'kundenservice',
+    'kundenbereich', 'ueber-uns', 'über-uns', 'impressum',
+    // IT
+    'contatti', 'contattaci', 'aiuto', 'assistenza', 'supporto', 'chi-siamo',
+  ];
+  const PRIVACY_KEYWORDS = [
+    // FR
+    'privacy', 'confidentialite', 'confidentialité',
+    'politique-de-confidentialite', 'politique-de-confidentialité',
+    'rgpd', 'donnees-personnelles', 'données-personnelles', 'vie-privee', 'vie-privée',
+    'protection-des-donnees', 'protection-des-données',
+    // EN
+    'privacy-policy', 'data-protection', 'gdpr',
+    // DE
+    'datenschutz', 'datenschutzerklaerung', 'datenschutzerklärung',
+    // IT
+    'privacy-policy', 'riservatezza', 'privatezza',
+  ];
+  const TERMS_KEYWORDS = [
+    // FR
+    'mentions-legales', 'mentions-légales', 'cgu', 'cgv',
+    'conditions-generales', 'conditions-générales',
+    'conditions-d-utilisation', 'conditions',
+    // EN
+    'terms', 'terms-of-service', 'terms-and-conditions', 'tos',
+    'legal', 'legal-notice',
+    // DE — impressum is BOTH a contact (mandatory legal-notice page) and
+    // terms signal in DACH; counted in both arrays intentionally.
+    'agb', 'impressum', 'rechtliches', 'nutzungsbedingungen',
+    // IT
+    'termini', 'condizioni', 'note-legali', 'termini-e-condizioni',
+  ];
+
+  const hasContactLink = hasDirectContactLink || matchesAny(CONTACT_KEYWORDS);
+  const hasPrivacyPolicy = matchesAny(PRIVACY_KEYWORDS);
+  const hasTermsOfService = matchesAny(TERMS_KEYWORDS);
 
   let signalCount = 0;
   if (hasAuthor) signalCount++;
