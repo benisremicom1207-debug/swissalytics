@@ -1,6 +1,6 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : `feat/p2-async-enrich` (P0/P1/P6 mergées sur `main`)
+**Branche en cours** : `feat/p11-llm-fixes` (P0/P1/P2/P6 mergées sur `main`)
 **Démarré** : 2026-05-04
 **Dernière maj** : 2026-05-09
 
@@ -164,6 +164,21 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 - ☐ **9.4** Pondération par position renforcée : remplacer la répétition `Array(N).fill()` par somme pondérée propre (title=10, h1=8, h2=4, meta=4, alt=3, body=1)
 
 **PR** : —
+
+### Phase 11 — Fixes LLM providers ☐
+**1 PR · 2026-05-09 · indépendant · débloque l'OQ1 partiellement**
+
+Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent l'indexation IA même quand les clés sont configurées correctement.
+
+- ✅ **11.1** `gemini.ts` : `gemini-pro` (déprécié par Google en 2024, retourne 404) → `gemini-1.5-flash` (free tier actuel). 5 tests unitaires (mock fetch, assert URL, branches indexed/not-indexed/error/missing-key).
+- ✅ **11.2** `mistral.ts` : `mistral-large-latest` (payant uniquement) → `mistral-small-latest` (meilleur modèle free tier). 5 tests unitaires.
+- ✅ **11.3** `geo-config.ts` : Mistral ajouté aux priorités régionales **CH**, **BE**, **LU**, **GLOBAL** (existait que pour FR). 5 tests dont 1 vérif round-trip que chaque `llmPriority` a son `marketShare` associé sur les 22 régions configurées.
+
+**Smoke test live** : avec `GEMINI_API_KEY` + `MISTRAL_API_KEY` dans `.env.local`, `/api/geo-analyze` sur `pixelab.ch` retourne 2 moteurs testés (Gemini + Mistral) au lieu de 0. Mistral détecte pixelab avec `confidence: high`, 12 mentions.
+
+**Note** : OQ1 reste partielle — ChatGPT/Perplexity/Bing nécessitent toujours des clés payantes. Mais avec Gemini+Mistral gratuits, on a déjà 2 moteurs représentatifs (Google + EU sovereignty).
+
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 10 — Dédupliquer l'affichage des liens internes ☐
 **1 PR · ~1 h · indépendant**
