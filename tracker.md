@@ -161,8 +161,20 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : —
 
+### Phase 13 — Multi-keyword targets (top 3) ☐
+**Bundlée dans la PR #9 · 2026-05-09**
+
+Découvert immédiatement après P9 : les sites réels (salt.ch fait internet + mobile + abonnement) ont **plusieurs thèmes business**, pas un seul. Le primary unique masque cette réalité.
+
+- ✅ **13.1** Type `KeywordTarget` + helper `selectTopTargets(keywords, n)` qui dédoublonne par chevauchement lexical (skip si partage un mot avec un déjà sélectionné). Ainsi "internet" ⇒ "internet at maximum" droppé, "mobile" ⇒ "mobile subscription" droppé.
+- ✅ **13.2** `KeywordsAnalysis` gagne `targets: KeywordTarget[]`. Chaque target porte ses 4 placement booleans (`inTitle`, `inH1`, `inMetaDescription`, `inFirst100Words`).
+- ✅ **13.3** UI : 3 chips au-dessus du card "Placement" existant. Primary tint vert, secondaires neutres. Chaque chip = nom + score + 4 mini-badges T/H1/M/100 verts si présents.
+- ✅ **13.4 Bonus** Stopwords allemands (60+ mots : der/die/das, und/oder, mit/für/von, ist/sind…) découverts en testant upc.ch (site germanophone) — `und`/`die`/`mit`/`bis` polluaient le top-12.
+
+**Smoke** sur upc.ch : top 3 = `sunrise`, `internet`, `tv entertainment` (UPC est rebrand Sunrise, contenu allemand). Avant : top 3 = `sunrise`, `und`, `internet` (`und` étant pollutant).
+
 ### Phase 9 — Keyword extraction v2 ☐
-**1 PR · 2026-05-09**
+**Bundlée dans la PR #9 · 2026-05-09**
 
 Découvert pendant le smoke test P3 : sunrise.ch détectait "sunrise" comme mot-clé principal, avec issues absurdes ("brand absent du H1", "densité trop élevée 3.2%"). Refonte complète du moteur d'extraction.
 
