@@ -1,5 +1,11 @@
 import type { CheerioAPI } from './cheerio';
-import type { KeywordInfo, KeywordsAnalysis, KeywordPlacement, Issue } from '../types';
+import type {
+  KeywordInfo,
+  KeywordsAnalysis,
+  KeywordPlacement,
+  KeywordTarget,
+  Issue,
+} from '../types';
 
 // French + English stop words + code noise
 const STOP_WORDS = new Set([
@@ -60,6 +66,21 @@ const STOP_WORDS = new Set([
   // English filler equivalents
   'click', 'learn', 'discover', 'read', 'now', 'today', 'yesterday', 'tomorrow',
   'soon', 'recent', 'latest', 'new', 'menu', 'home', 'page',
+  // German stop words — major Swiss language (DE/CH-DE sites). Found via
+  // upc.ch smoke test where 'und' (and), 'die' (the), 'mit' (with), 'bis'
+  // (until) were polluting the top-12.
+  'der', 'die', 'das', 'den', 'dem', 'des',
+  'ein', 'eine', 'einer', 'eines', 'einem', 'einen',
+  'und', 'oder', 'aber', 'auch', 'als', 'wie', 'wenn', 'weil', 'dass',
+  'ist', 'sind', 'war', 'waren', 'sein', 'haben', 'hat', 'hatte', 'wird', 'werden',
+  'mit', 'für', 'von', 'auf', 'aus', 'bei', 'bis', 'nach', 'über', 'unter',
+  'durch', 'gegen', 'ohne', 'um', 'vor', 'zwischen', 'seit',
+  'ich', 'mich', 'mir', 'wir', 'uns', 'unser', 'unsere',
+  'dein', 'deine', 'sein', 'seine',
+  'ihr', 'ihre', 'ihrer',
+  'nicht', 'kein', 'keine', 'nur', 'noch', 'auch', 'mehr', 'alle', 'alles',
+  'jetzt', 'heute', 'morgen', 'gestern', 'bald',
+  'diese', 'dieser', 'dieses', 'jene', 'jener',
 ]);
 
 /**
@@ -191,6 +212,47 @@ function extractNGrams(
   return out;
 }
 
+/**
+ * Pick the top-N distinct keyword targets (P13). Iterates the score-sorted
+ * list and skips any candidate that shares ANY word with an already-selected
+ * target — so "internet at maximum" is dropped after "internet" wins.
+ *
+ * This matches how SEO teams actually plan: 1 primary + 2-3 secondary
+ * keywords per page, each covering a DIFFERENT theme. A site like salt.ch
+ * legitimately targets internet, mobile, AND calls — three distinct themes.
+ */
+export function selectTopTargets(keywords: KeywordInfo[], n: number): KeywordInfo[] {
+  const selected: KeywordInfo[] = [];
+  const usedWords = new Set<string>();
+  for (const kw of keywords) {
+    if (selected.length >= n) break;
+    const candidateWords = kw.word.split(/\s+/);
+    if (candidateWords.some((w) => usedWords.has(w))) continue;
+    selected.push(kw);
+    candidateWords.forEach((w) => usedWords.add(w));
+  }
+  return selected;
+}
+
+/**
+ * Per-target placement check (P13). Returns whether the keyword/phrase
+ * appears in each of the four canonical SEO zones for the page.
+ * Used by both `analyzeKeywords` (for top-3 targets) and indirectly by
+ * the existing `placement` payload (which mirrors target #0).
+ */
+function checkPlacement(
+  word: string,
+  texts: { title: string; h1: string; meta: string; first100: string },
+): Pick<KeywordTarget, 'inTitle' | 'inH1' | 'inMetaDescription' | 'inFirst100Words'> {
+  const w = word.toLowerCase();
+  return {
+    inTitle: texts.title.includes(w),
+    inH1: texts.h1.includes(w),
+    inMetaDescription: texts.meta.includes(w),
+    inFirst100Words: texts.first100.includes(w),
+  };
+}
+
 function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo[] {
   const sections: { text: string; weight: number }[] = [
     { text: $('title').text().trim(), weight: SECTION_WEIGHTS.title },
@@ -228,7 +290,7 @@ export function analyzeKeywords($: CheerioAPI, url?: string): KeywordsAnalysis {
   const issues: Issue[] = [];
 
   if (keywords.length === 0) {
-    return { keywords, placement: null, issues };
+    return { keywords, placement: null, targets: [], issues };
   }
 
   const primary = keywords[0].word;
@@ -310,5 +372,20 @@ export function analyzeKeywords($: CheerioAPI, url?: string): KeywordsAnalysis {
     brandMentions,
   };
 
-  return { keywords, placement, issues };
+  // P13 — top-3 distinct targets. targets[0] mirrors `placement` for
+  // consistency; targets[1] and [2] are adjacent themes (e.g. salt.ch
+  // → internet, mobile, calls). Each gets its own placement check.
+  const placementTexts = {
+    title: titleText,
+    h1: h1Text,
+    meta: metaDesc,
+    first100: first100Words,
+  };
+  const targets: KeywordTarget[] = selectTopTargets(keywords, 3).map((kw) => ({
+    word: kw.word,
+    score: kw.count,
+    ...checkPlacement(kw.word, placementTexts),
+  }));
+
+  return { keywords, placement, targets, issues };
 }
