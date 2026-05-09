@@ -1,6 +1,6 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : `feat/p12-claude-provider` (P0/P1/P2/P6/P11 mergées sur `main`)
+**Branche en cours** : `feat/p3-geo-visualization` (P0/P1/P2/P6/P11/P12 mergées sur `main`)
 **Démarré** : 2026-05-04
 **Dernière maj** : 2026-05-09
 
@@ -102,16 +102,22 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 **PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 3 — Visualiser le moteur GEO ☐
-**1 PR · ~8 h · dépend P1+P2 · bloqué par OQ1 · 🎨 Validation visuelle requise**
+**1 PR · 2026-05-09 · 🎨 Validation visuelle**
 
-- ☐ **3.1** Ajouter une 4ᵉ tab `IA / GEO` dans `ReportView.tsx`
-- ☐ **3.2** Panneau **Indexation IA** : grille des moteurs testés (statut indexed + confidence)
-- ☐ **3.3** Panneau **Schema.org** : checklist des types (Organization, Article, FAQ, BreadcrumbList, ProfilePage, Review, Service)
-- ☐ **3.4** Panneau **E-E-A-T** : 4 signaux (équipe, mentions légales, contact, témoignages)
-- ☐ **3.5** Panneau **Lighthouse** : 4 cartes perf/a11y/best practices/SEO
-- ☐ **3.6** Avertissement quand `lighthouse.isEstimated === true`
+- ✅ **3.1** 4ᵉ tab `INDEXATION IA / GEO` ajoutée à `ReportView.tsx` + i18n FR/EN dans `copy.ts` (`tabs[3]` + `tabsMono[3]`). URL sync via `?tab=geo`.
+- ✅ **3.2** Panneau **Indexation IA** : grille de cards par moteur (✓/×, badge confidence, mentions count). Header avec score + "X/Y moteurs IA vous indexent · {région}". Empty state si aucun moteur configuré.
+- ✅ **3.3** Panneau **Schema.org** : checklist des 6 types détectés par le code (Organization, WebSite, BreadcrumbList, Article, Author, FAQPage). Chaque ligne avec hint expliquant l'impact SEO/IA.
+- ✅ **3.4** Panneau **E-E-A-T** : 4 signal cards (page équipe, mentions légales, contact, témoignages avec compteur). Hint par signal.
+- ✅ **3.5** Panneau **Lighthouse** : 4 cards (perf/accessibility/bestPractices/SEO) avec score color (vert/orange/rouge selon seuils 80/60). Header avec moyenne des 4 scores.
+- ✅ **3.6** Bandeau orange "⚠️ Scores estimés — clé Google PageSpeed non configurée" affiché en tête du panneau Lighthouse quand `isEstimated === true`.
+- ✅ **3.7** Empty state avec **animation** quand `geoAnalysis === undefined` (loading async ou rapport pré-P2) : skeleton des 4 panneaux + scanner bars + bandeau "Analyse IA en cours — interroge ChatGPT, Claude, Gemini, Mistral…" avec `sa-flash` infinite. Réutilise les keyframes existantes de globals.css.
+- ✅ **3.8** **Bonus fix** Gemini : `gemini-1.5-flash` → `gemini-2.5-flash`. Découvert pendant le smoke test live : 1.5-flash refusait de reconnaître les marques suisses (sunrise.ch, pixelab.ch). 2.0-flash retournait 404 ("no longer available to new users"). 2.5-flash est le free-tier actuel pour les nouvelles clés. Test unitaire mis à jour.
 
-**PR** : —
+**Smoke test live** : sur `https://www.sunrise.ch/`, score indexation **100/100, 4/4 moteurs reconnaissent la marque** (vs 50/100 avant le fix Gemini).
+
+**Note tests** : pas de test unitaire des composants React (le projet n'a pas `@testing-library/react`, pattern existant = pure-function tests + smoke validation manuelle, comme les 7 fichiers extraits en P6.3). Smoke test live + validation visuelle utilisateur servent de validation.
+
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 4 — Plan unifié ☐
 **1 PR · ~3 h · dépend P2**
