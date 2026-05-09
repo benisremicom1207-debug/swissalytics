@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getReportsRepo } from '@/lib/engine/repositoryInstance';
+import { mergeEnrichment } from '@/lib/engine/enrich';
 
 export async function GET(
   _req: Request,
@@ -13,6 +14,6 @@ export async function GET(
   }
   return NextResponse.json({
     reportId: stored.id,
-    report: stored.data,
+    report: mergeEnrichment(stored),
   });
 }

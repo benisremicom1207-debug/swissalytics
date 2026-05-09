@@ -10,8 +10,15 @@
  * and storedToRow below.
  */
 
-import type { ReportsRepository } from './repository';
-import type { AnalysisReport, Lang, ReportSummary, StoredReport } from './types';
+import type { EnrichPatch, ReportsRepository } from './repository';
+import type {
+  AnalysisReport,
+  CwvEnrichment,
+  Lang,
+  ReportSummary,
+  StoredReport,
+} from './types';
+import type { GeoAnalysisResult } from '@/lib/analyzers/types';
 import { getSupabaseClient } from './supabaseClient';
 
 interface ReportRow {
@@ -28,6 +35,8 @@ interface ReportRow {
   country: string | null;
   user_agent: string | null;
   referrer: string | null;
+  geo_analysis: unknown;
+  cwv: unknown;
 }
 
 export function storedToRow(r: StoredReport): ReportRow {
@@ -47,6 +56,8 @@ export function storedToRow(r: StoredReport): ReportRow {
     country: r.country ?? null,
     user_agent: r.userAgent ?? null,
     referrer: r.referrer ?? null,
+    geo_analysis: r.geoAnalysis ?? null,
+    cwv: r.cwv ?? null,
   };
 }
 
@@ -67,6 +78,8 @@ export function rowToStored(row: ReportRow): StoredReport {
     country: row.country,
     userAgent: row.user_agent,
     referrer: row.referrer,
+    geoAnalysis: (row.geo_analysis ?? null) as GeoAnalysisResult | null,
+    cwv: (row.cwv ?? null) as CwvEnrichment | null,
   };
 }
 
@@ -171,6 +184,25 @@ export class SupabaseReportsRepository implements ReportsRepository {
     }
 
     return count ?? 0;
+  }
+
+  async enrich(id: string, patch: EnrichPatch): Promise<StoredReport | null> {
+    const update: { geo_analysis?: GeoAnalysisResult; cwv?: CwvEnrichment } = {};
+    if (patch.geoAnalysis !== undefined) update.geo_analysis = patch.geoAnalysis;
+    if (patch.cwv !== undefined) update.cwv = patch.cwv;
+    if (Object.keys(update).length === 0) {
+      // No-op patch: just fetch the row instead of issuing an empty UPDATE.
+      return this.getById(id);
+    }
+
+    const { data, error } = await this.client
+      .from('reports')
+      .update(update)
+      .eq('id', id)
+      .select('*')
+      .maybeSingle();
+    if (error) throw new Error(`supabase enrich: ${error.message}`);
+    return data ? rowToStored(data as ReportRow) : null;
   }
 
   async listRecent(limit: number): Promise<ReportSummary[]> {

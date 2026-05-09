@@ -5,7 +5,19 @@
  * They share the same shape; `StoredReport` adds bookkeeping columns.
  */
 
-import type { AnalysisResult } from '@/lib/types';
+import type { AnalysisResult, CwvMetrics, Issue } from '@/lib/types';
+import type { GeoAnalysisResult } from '@/lib/analyzers/types';
+
+/**
+ * CWV enrichment payload — mirrors the /api/analyze/cwv response shape.
+ * Persisted as `reports.cwv` JSONB so /r/<id> and /s/<slug> can rehydrate
+ * the same technical-score adjustment the live page applied.
+ */
+export interface CwvEnrichment {
+  coreWebVitals: { mobile: CwvMetrics | null; desktop: CwvMetrics | null } | null;
+  cwvIssues: Issue[];
+  cwvScorePenalty: number;
+}
 
 export type Lang = 'fr' | 'en';
 
@@ -52,6 +64,12 @@ export interface StoredReport {
   country?: string | null;
   userAgent?: string | null;
   referrer?: string | null;
+
+  // Enrichissement asynchrone (Phase 2) — populé via PATCH .../enrich
+  // après les fetches /api/geo-analyze et /api/analyze/cwv. Null tant que
+  // l'enrichissement n'a pas été persisté.
+  geoAnalysis?: GeoAnalysisResult | null;
+  cwv?: CwvEnrichment | null;
 }
 
 /** Minimal meta for list/recent queries */
