@@ -42,7 +42,11 @@ export class ChatGPTProvider implements LLMProvider {
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          // gpt-4o-mini: ~50× moins cher que gpt-4o pour une qualité équivalente
+          // sur la tâche de reconnaissance de marque (input court, output ~500 tk).
+          // À ~$0.15/1M input tokens, $5 de crédit OpenAI ≈ 50 000 analyses,
+          // contre ~1 000 avec gpt-4o. Indispensable pour un service gratuit.
+          model: 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
