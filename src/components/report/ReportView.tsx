@@ -14,6 +14,7 @@ import { ShareButton } from './ShareButton';
 import { OverviewContent } from './OverviewContent';
 import { DetailsContent, type DetailsSectionKey } from './DetailsContent';
 import { PlanContent } from './PlanContent';
+import { GeoTabContent } from './GeoTabContent';
 
 interface ReportViewProps {
   report: AnalysisResult;
@@ -23,7 +24,7 @@ interface ReportViewProps {
   degraded?: boolean;
 }
 
-type TabKey = 'overview' | 'details' | 'plan';
+type TabKey = 'overview' | 'details' | 'plan' | 'geo';
 
 function truncateUrl(url: string, max = 48): string {
   if (!url) return '';
@@ -32,7 +33,7 @@ function truncateUrl(url: string, max = 48): string {
 }
 
 function parseTab(v: string | null): TabKey {
-  if (v === 'details' || v === 'plan') return v;
+  if (v === 'details' || v === 'plan' || v === 'geo') return v;
   return 'overview';
 }
 
@@ -190,8 +191,8 @@ export default function ReportView({
     { key: 'readability', num: '06', label: isFr ? 'Lisibilité' : 'Readability' },
   ];
 
-  const tabsMono = copy.tabsMono; // [OVERVIEW, DETAILS, ACTION PLAN]
-  const tabKeys: TabKey[] = ['overview', 'details', 'plan'];
+  const tabsMono = copy.tabsMono; // [OVERVIEW, DETAILS, ACTION PLAN, AI INDEXATION / GEO]
+  const tabKeys: TabKey[] = ['overview', 'details', 'plan', 'geo'];
 
   const showShare = !!reportId && !readOnly;
 
@@ -375,6 +376,8 @@ export default function ReportView({
             infoItems={infoItems}
           />
         )}
+
+        {tab === 'geo' && <GeoTabContent report={report} isFr={isFr} />}
       </div>
     </div>
   );
