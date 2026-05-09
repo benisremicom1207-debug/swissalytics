@@ -46,6 +46,22 @@ describe('Mistral availability across regions', () => {
   });
 });
 
+describe('Claude availability across regions', () => {
+  // Claude is wired to all Western markets where Anthropic has meaningful share.
+  it.each<RegionCode>(['CH', 'FR', 'BE', 'LU', 'DE', 'AT', 'GB', 'IE', 'US', 'CA', 'GLOBAL'])(
+    'includes claude in the %s priority list',
+    (region) => {
+      expect(getLLMsForRegion(region)).toContain('claude');
+    },
+  );
+
+  it('keeps claude OUT of asian region priorities (CN/KR/JP)', () => {
+    expect(getLLMsForRegion('CN')).not.toContain('claude');
+    expect(getLLMsForRegion('KR')).not.toContain('claude');
+    expect(getLLMsForRegion('JP')).not.toContain('claude');
+  });
+});
+
 describe('Region configs are internally consistent', () => {
   // For every region, every LLM in llmPriority must have a marketShare entry.
   it.each(Object.entries(REGION_CONFIGS))(

@@ -96,6 +96,7 @@ export interface LLMRegistryConfig {
  * - Global : ChatGPT, Gemini, Perplexity, Bing, You, Grok, Kagi
  */
 import { ChatGPTProvider } from './chatgpt';
+import { ClaudeProvider } from './claude';
 import { PerplexityProvider } from './perplexity';
 import { GeminiProvider } from './gemini';
 import { BingCopilotProvider } from './bing-copilot';
@@ -112,6 +113,7 @@ import { detectRegionFromDomain, getLLMsForRegion, getRegionConfig } from './geo
 export const LLM_REGISTRY: LLMProvider[] = [
   // ===== TIER 1 : GLOBAUX (tous les marchés) =====
   new ChatGPTProvider(),      // Leader mondial ~40-50%
+  new ClaudeProvider(),        // Anthropic ~5-12% (fort en tech/finance/EU)
   new GeminiProvider(),        // Google ~15-30%
   new PerplexityProvider(),   // Recherche IA ~10-25%
   new BingCopilotProvider(),   // Microsoft ~8-20%
