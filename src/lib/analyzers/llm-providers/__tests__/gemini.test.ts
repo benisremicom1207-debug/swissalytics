@@ -12,9 +12,11 @@ import { GeminiProvider } from '../gemini';
 
 /**
  * The Gemini provider must call the current free-tier model
- * (gemini-1.5-flash). The previous implementation called gemini-pro,
- * which Google deprecated in 2024 and now returns 404 on. This test
- * pins the URL so we don't silently regress the model name.
+ * (gemini-2.5-flash). Prior free-tier models all hit dead ends:
+ *   - gemini-pro: deprecated 2024 → 404
+ *   - gemini-1.5-flash: works but knowledge too narrow
+ *   - gemini-2.0-flash: "no longer available to new users" → 404
+ * This test pins the URL so we don't silently regress the model name.
  */
 
 const fetchSpy = vi.fn<typeof fetch>();
@@ -36,14 +38,17 @@ function mockResponse(body: unknown) {
 }
 
 describe('GeminiProvider.testIndexation', () => {
-  it('calls gemini-1.5-flash, not the deprecated gemini-pro', async () => {
+  it('calls gemini-2.5-flash (current free-tier default for new API keys)', async () => {
     mockResponse({ candidates: [{ content: { parts: [{ text: 'unknown brand' }] } }] });
     await new GeminiProvider().testIndexation('pixelab', 'pixelab.ch');
 
     expect(fetchSpy).toHaveBeenCalledOnce();
     const url = fetchSpy.mock.calls[0][0] as string;
-    expect(url).toContain('models/gemini-1.5-flash:generateContent');
+    expect(url).toContain('models/gemini-2.5-flash:generateContent');
+    // Guard against regressing to deprecated/weaker free-tier models
     expect(url).not.toContain('gemini-pro:');
+    expect(url).not.toContain('gemini-1.5-flash:');
+    expect(url).not.toContain('gemini-2.0-flash:');
   });
 
   it('returns indexed=false when the brand is not mentioned', async () => {

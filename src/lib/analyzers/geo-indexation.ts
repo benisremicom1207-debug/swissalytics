@@ -15,21 +15,44 @@
  * Ajouter un nouveau LLM : voir /llm-providers/registry.ts
  */
 
-import { getLLMRegistry, testAllLLMs } from './llm-providers/registry';
+import { getLLMRegistry, testAllLLMs, type LLMProvider, type LLMTestResult } from './llm-providers/registry';
+
+export interface GEOIndexationEngine {
+  indexed: boolean;
+  mentions: number;
+  confidence: 'high' | 'medium' | 'low' | 'none';
+  name?: string;
+  company?: string;
+  /** Raw error message when the upstream LLM API call failed. */
+  error?: string;
+}
 
 export interface GEOIndexationResult {
   score: number;
-  engines: Record<string, {
-    indexed: boolean;
-    mentions: number;
-    confidence: 'high' | 'medium' | 'low' | 'none';
-    name?: string;
-    company?: string;
-  }>;
+  engines: Record<string, GEOIndexationEngine>;
   totalIndexed: number;
   totalEnabled: number;
   region?: string;
   recommendations: string[];
+}
+
+/**
+ * Pure helper — converts a single LLM provider result + provider metadata
+ * into the public engine shape. Extracted so we can unit-test the error
+ * propagation independently of the network-dependent analyzer entry point.
+ */
+export function convertResultToEngine(
+  result: LLMTestResult,
+  provider?: LLMProvider,
+): GEOIndexationEngine {
+  return {
+    indexed: result.indexed,
+    mentions: result.mentions,
+    confidence: result.confidence,
+    name: provider?.name,
+    company: provider?.company,
+    error: result.metadata?.error,
+  };
 }
 
 export async function analyzeGEOIndexation(url: string): Promise<GEOIndexationResult> {
@@ -51,18 +74,12 @@ export async function analyzeGEOIndexation(url: string): Promise<GEOIndexationRe
     // Tester tous les LLMs pertinents en parallèle
     const results = await testAllLLMs(brandName, domain, url);
     
-    // Convertir résultats en format compatible
+    // Convertir résultats en format compatible (error compris — voir convertResultToEngine)
     const engines: GEOIndexationResult['engines'] = {};
-    
+
     results.forEach((result, providerId) => {
       const provider = registry.all.find(p => p.id === providerId);
-      engines[providerId] = {
-        indexed: result.indexed,
-        mentions: result.mentions,
-        confidence: result.confidence,
-        name: provider?.name,
-        company: provider?.company,
-      };
+      engines[providerId] = convertResultToEngine(result, provider);
     });
     
     // Nombre total de LLMs indexant le site

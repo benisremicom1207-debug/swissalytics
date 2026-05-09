@@ -40,6 +40,12 @@ export interface GeoIndexationEngineResult {
   mentions: number;
   name?: string;
   company?: string;
+  /**
+   * Raw error message when the upstream LLM API failed (404, 401, timeout…).
+   * Surfaced to the UI so a deprecated model or revoked key shows up as
+   * "moteur indisponible" instead of silently looking like indexed=false.
+   */
+  error?: string;
 }
 
 export interface GeoIndexation {
