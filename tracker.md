@@ -119,14 +119,16 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟡 (en cours d'ouverture)
 
-### Phase 4 — Plan unifié ☐
-**1 PR · ~3 h · dépend P2**
+### Phase 4 — Plan unifié ✅
+**1 PR · 2026-05-09 · dépend P2**
 
-- ☐ **4.1** Étendre `buildPlan()` (`lib/engine/plan.ts`) pour absorber `geoAnalysis.recommendations`
-- ☐ **4.2** Mapping priority `critical|high|medium|low` → buckets crit/warn/info
-- ☐ **4.3** Tri par `impact` desc dans chaque bucket
+- ✅ **4.1** `buildPlan()` absorbe désormais `geoAnalysis.recommendations` via un nouveau collector `collectGeoRecs()` (catégories `SEO IA` / `GEO IA`)
+- ✅ **4.2** Mapping priority → severity : `critical|high → error/crit`, `medium → warning/warn`, `low → info/info` ; difficulty `low|medium|high → S|M|L`
+- ✅ **4.3** `sortWeight()` unifié : geo `impact × 5` (25..150) vs natif `nativeImpactScore` (10..115), sort dans chaque bucket par poids desc
 
-**PR** : —
+**Tests** : 19 nouveaux tests dans `src/lib/engine/__tests__/plan.test.ts` (regression natif + integration geo + mapping priorité + mapping difficulté + sort order mixte). Total : 157/157 ✅
+
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 5 — Porter onglets en brutalist v2 ☐
 **1 PR · ~10 h · 🎨 Validation visuelle requise**
