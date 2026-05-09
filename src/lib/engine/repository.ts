@@ -6,7 +6,14 @@
  * only depends on this interface.
  */
 
-import type { Lang, ReportSummary, StoredReport } from './types';
+import type { CwvEnrichment, Lang, ReportSummary, StoredReport } from './types';
+import type { GeoAnalysisResult } from '@/lib/analyzers/types';
+
+/** Patch payload for enrich() — at least one field must be present. */
+export interface EnrichPatch {
+  geoAnalysis?: GeoAnalysisResult;
+  cwv?: CwvEnrichment;
+}
 
 export interface ReportsRepository {
   /** Persist a new report. Throws on id collision. */
@@ -55,4 +62,11 @@ export interface ReportsRepository {
 
   /** Light metadata listing — used for admin/stats later. */
   listRecent(limit: number): Promise<ReportSummary[]>;
+
+  /**
+   * Patch the asynchronously-fetched enrichment (geoAnalysis + cwv).
+   * Only the keys present in `patch` are written; missing keys are left untouched.
+   * Returns the updated StoredReport, or null if id not found.
+   */
+  enrich(id: string, patch: EnrichPatch): Promise<StoredReport | null>;
 }

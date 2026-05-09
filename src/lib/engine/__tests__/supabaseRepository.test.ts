@@ -39,6 +39,25 @@ describe('storedToRow', () => {
     expect(row.share_token).toBe('abc123');
     expect(row.share_expires_at).toBe(new Date(1746360000000).toISOString());
   });
+
+  it('serializes null geo_analysis + cwv when enrichment is absent', () => {
+    const row = storedToRow(sampleStored);
+    expect(row.geo_analysis).toBeNull();
+    expect(row.cwv).toBeNull();
+  });
+
+  it('passes through geo_analysis + cwv payloads when enrichment is present', () => {
+    const cwv = { coreWebVitals: null, cwvIssues: [], cwvScorePenalty: 0 };
+    const geo = { score: 41 } as unknown;
+    const stored = {
+      ...sampleStored,
+      geoAnalysis: geo as StoredReport['geoAnalysis'],
+      cwv: cwv as StoredReport['cwv'],
+    };
+    const row = storedToRow(stored);
+    expect(row.geo_analysis).toBe(geo);
+    expect(row.cwv).toBe(cwv);
+  });
 });
 
 describe('rowToStored', () => {
@@ -57,6 +76,8 @@ describe('rowToStored', () => {
       country: 'CH',
       user_agent: 'Mozilla/5.0',
       referrer: 'https://google.com/',
+      geo_analysis: null,
+      cwv: null,
     };
     const stored = rowToStored(row);
     expect(stored.id).toBe('pixelab-ch-a8x4');
@@ -72,10 +93,29 @@ describe('rowToStored', () => {
       crawl_ms: 0, share_token: null, share_expires_at: null,
       data: {},
       ip_hash: null, country: null, user_agent: null, referrer: null,
+      geo_analysis: null, cwv: null,
     };
     const stored = rowToStored(row);
     expect(stored.shareToken).toBeNull();
     expect(stored.shareExpiresAt).toBeNull();
     expect(stored.ipHash).toBeNull();
+    expect(stored.geoAnalysis).toBeNull();
+    expect(stored.cwv).toBeNull();
+  });
+
+  it('passes through geo_analysis + cwv when present in the row', () => {
+    const geo = { score: 41 };
+    const cwv = { coreWebVitals: null, cwvIssues: [], cwvScorePenalty: 0 };
+    const row = {
+      id: 'x', url: 'u', lang: 'fr' as const, score: 0,
+      created_at: '2026-05-03T12:00:00.000Z',
+      crawl_ms: 0, share_token: null, share_expires_at: null,
+      data: {},
+      ip_hash: null, country: null, user_agent: null, referrer: null,
+      geo_analysis: geo, cwv,
+    };
+    const stored = rowToStored(row);
+    expect(stored.geoAnalysis).toEqual(geo);
+    expect(stored.cwv).toEqual(cwv);
   });
 });
