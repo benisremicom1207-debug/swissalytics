@@ -1,6 +1,6 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : `feat/p11-llm-fixes` (P0/P1/P2/P6 mergées sur `main`)
+**Branche en cours** : `feat/p12-claude-provider` (P0/P1/P2/P6/P11 mergées sur `main`)
 **Démarré** : 2026-05-04
 **Dernière maj** : 2026-05-09
 
@@ -164,6 +164,22 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 - ☐ **9.4** Pondération par position renforcée : remplacer la répétition `Array(N).fill()` par somme pondérée propre (title=10, h1=8, h2=4, meta=4, alt=3, body=1)
 
 **PR** : —
+
+### Phase 12 — Add Claude (Anthropic) provider ☐
+**1 PR · 2026-05-09 · indépendant · étend l'OQ1**
+
+Claude (Anthropic) manquait totalement du registry des 12 providers. Omission notable vu sa part de marché significative en finance/tech (publics Pixelab cibles).
+
+- ✅ **12.1** Nouveau `src/lib/analyzers/llm-providers/claude.ts` — modèle `claude-haiku-4-5` (le moins cher d'Anthropic, ~$1/1M input + $5/1M output, ~$0.0026/analyse). Header `x-api-key` (pas Bearer), `anthropic-version: 2023-06-01`, body avec `system` top-level, parsing `data.content[0].text`.
+- ✅ **12.2** `ClaudeProvider` enregistré dans le Tier 1 du registry. Ajouté aux régions **CH** (6%), **FR** (4%), **BE** (4%), **LU** (5%), **DE** (5%), **AT** (4%), **GB** (7%), **IE** (6%), **US** (10%), **CA** (7%), **GLOBAL** (5%). Exclu des régions asiatiques (CN/KR/JP — pas d'adoption notable).
+- ✅ **12.3** 5 tests unitaires : pin du modèle (interdit `sonnet`/`opus` accidentellement), header `x-api-key` (vérifie absence de `Authorization: Bearer`), header `anthropic-version`, parsing `content[0].text`, branche missing-key.
+- ✅ **12.4** 11 tests dans `geo-config.test.ts` qui vérifient que `claude` est dans toutes les régions occidentales et absent des asiatiques. L'invariant structurel existant (chaque `llmPriority` a un `marketShare`) couvre les 22 régions.
+
+**Smoke test live** : avec `ANTHROPIC_API_KEY` ajoutée à `.env.local`, `/api/geo-analyze` sur `pixelab.ch` retourne **4 moteurs testés** au lieu de 3 (Gemini + Mistral + ChatGPT + Claude). Claude détecte pixelab avec `confidence: high`, 6 mentions.
+
+**Couverture marché CH** : ~73% (chatgpt 42 + gemini 18 + claude 6 + mistral 3 + autres marginaux non testés). Avant P11+P12 : 0%.
+
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 11 — Fixes LLM providers ☐
 **1 PR · 2026-05-09 · indépendant · débloque l'OQ1 partiellement**
