@@ -71,24 +71,24 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟢 #2 (squash-merged)
 
-### Phase 1 — Typer geoAnalysis ☐
-**1 PR · ~3 h · bloque P2, P3**
+### Phase 1 — Typer geoAnalysis ✅
+**1 PR · mergée 2026-05-07 · débloque P2, P3**
 
-- ☐ **1.1** Déplacer `AnalysisResult` de `components/geo-analyzer/types.ts` → `lib/analyzers/types.ts`, renommer `GeoAnalysisResult`
-- ☐ **1.2** Remplacer `geoAnalysis?: unknown` par `geoAnalysis?: GeoAnalysisResult` dans `lib/types.ts`
-- ☐ **1.3** Supprimer tous les casts `as { score?: number }`
-- ☐ **1.4** Vérifier `tsc --noEmit` strict en CI
+- ✅ **1.1** `GeoAnalysisResult` créé dans `lib/analyzers/types.ts` avec sous-types complets (Lighthouse, GeoIndexation, GeoSchema, GeoEeat, recos, projection). Ancien fichier `components/geo-analyzer/types.ts` reste comme shim deprecated jusqu'à P6.
+- ✅ **1.2** `geoAnalysis?: unknown` → `geoAnalysis?: GeoAnalysisResult`
+- ✅ **1.3** Cast défensif `as { geo?: { score?: number } } | undefined` retiré de `ReportView.tsx`
+- ✅ **1.4** tsc --noEmit clean, lint clean, 16/16 tests pass. Smoke prod : `geo.score: 36` pour pixelab.ch via /api/geo-analyze.
 
-**PR** : —
+**PR** : 🟢 #3 (squash-merged)
 
 ### Phase 6 — Cleanup ☐
-**1 PR · ~2 h · parallélisable avec P1**
+**1 PR · 2026-05-07**
 
-- ☐ **6.1** Supprimer code mort : `components/AnalyzerResults.tsx`, `geo-analyzer/AnalyzerHero.tsx`, `geo-analyzer/AnalyzerLoading.tsx`, `geo-analyzer/AnalyzerResults.tsx`
-- ☐ **6.2** Supprimer `deploy.sh`, `Dockerfile` (s'il existe), références Docker/Jelastic dans README
-- ☐ **6.3** Découper `ReportView.tsx` (1298 L) → `report/Gauge.tsx`, `Scorecard.tsx`, `ShareButton.tsx`, `PlanBucket.tsx`, `OverviewContent.tsx`, `DetailsContent.tsx`, `PlanContent.tsx`
+- ✅ **6.1** Code mort supprimé (1207 lignes) : `components/AnalyzerResults.tsx`, dossier `geo-analyzer/` entier (AnalyzerHero, AnalyzerLoading, AnalyzerResults, types.ts shim deprecated de P1)
+- ✅ **6.2** `deploy.sh` + `Dockerfile` supprimés (fossiles Docker/Jelastic, plus utilisés depuis le passage à systemd). Pas de README à nettoyer.
+- ✅ **6.3** `ReportView.tsx` 1302 → 381 L (-71%). 7 fichiers extraits : `Gauge.tsx`, `Scorecard.tsx`, `ShareButton.tsx`, `PlanBucket.tsx`, `OverviewContent.tsx`, `DetailsContent.tsx`, `PlanContent.tsx`. `StripCaptionBar` reste inline (30 L, utilisé seulement dans ReportView).
 
-**PR** : —
+**PR** : 🟢 (en cours d'ouverture)
 
 ### Phase 2 — Persister geoAnalysis + CWV en async ☐
 **1 PR · ~5 h · dépend P1, bloque P3 et P4**
@@ -162,6 +162,22 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 - ☐ **9.2** Bigrammes/trigrammes : générer + scorer en parallèle (boost ×1.5 pour bigrammes, ×2 pour trigrammes)
 - ☐ **9.3** Stopwords étendus : noms réseaux/villes/pays/CTA génériques (linkedin, facebook, suisse, genève, contact, accueil, etc.)
 - ☐ **9.4** Pondération par position renforcée : remplacer la répétition `Array(N).fill()` par somme pondérée propre (title=10, h1=8, h2=4, meta=4, alt=3, body=1)
+
+**PR** : —
+
+### Phase 10 — Dédupliquer l'affichage des liens internes ☐
+**1 PR · ~1 h · indépendant**
+
+Dans l'onglet "Liens & navigation" (`LinksTab.tsx`), les URLs identiques apparaissent plusieurs fois (ex : `/services/`, `/contact/` listés 2-3× quand la page a header + footer + sous-nav). Le moteur compte correctement les occurrences DOM, mais l'affichage gagne en lisibilité avec dédup.
+
+- ☐ **10.1** Dans `LinksTab.tsx`, grouper par `href` (URL canonique). Afficher chaque URL une seule fois, avec :
+  - Liste des textes d'ancrage uniques (`Set<string>`) si plusieurs
+  - Compteur d'occurrences (`× 3`)
+  - Attributs (dofollow / nofollow / sponsored) — afficher l'union si conflit
+- ☐ **10.2** Same dédup pour les liens externes
+- ☐ **10.3** Backend (`lib/analyzer/links.ts`) reste inchangé — le total brut reste correct pour le score, c'est juste l'affichage qui change
+
+**Note** : naturellement intégré dans P5 si on rewrite `LinksTab` en brutalist v2 à ce moment-là. Si P5 vient avant P10, fusionner les deux. Si P10 arrive avant, garder isolé.
 
 **PR** : —
 
