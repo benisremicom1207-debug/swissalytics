@@ -121,6 +121,7 @@ export function DetailsContent({
             data={report.headings}
             keywords={report.keywords}
             url={report.url}
+            spa={report.spa}
           />
         );
       case 'images':

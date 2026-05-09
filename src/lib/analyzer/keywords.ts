@@ -7,9 +7,13 @@ import type {
   Issue,
 } from '../types';
 
-// French + English stop words + code noise
+// Multi-language stop words covering the 4 official Swiss languages
+// (FR, EN, DE, IT) + code/JS noise. Pronouns are exhaustively covered
+// because they're the most common false-positive keyword targets — a
+// page repeating "you/your/dir/dein" naturally has those at high
+// frequency without them being meaningful SEO targets.
 const STOP_WORDS = new Set([
-  // French
+  // French — full pronoun coverage (subjects + objects + possessives)
   'le', 'la', 'les', 'de', 'des', 'du', 'un', 'une', 'et', 'en', 'est', 'que',
   'qui', 'dans', 'ce', 'il', 'ne', 'sur', 'se', 'pas', 'plus', 'par', 'au', 'aux',
   'son', 'sa', 'ses', 'ou', 'mais', 'sont', 'pour', 'avec', 'tout', 'nous', 'vous',
@@ -21,7 +25,8 @@ const STOP_WORDS = new Set([
   'ici', 'là', 'alors', 'ainsi', 'avant', 'où', 'deux', 'trois', 'fois',
   'plus', 'moins', 'chaque', 'tel', 'telle', 'cet', 'ceux', 'celle',
   'celles', 'lors', 'mes', 'tes', 'ton', 'ma', 'mon',
-  // English
+  'je', 'tu', 'te', 'moi', 'toi', 'eux',
+  // English — full pronoun coverage including reflexives + absolute possessives
   'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
   'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
   'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
@@ -32,6 +37,8 @@ const STOP_WORDS = new Set([
   'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over',
   'also', 'after', 'use', 'how', 'our', 'work', 'first', 'well', 'way',
   'even', 'new', 'want', 'because', 'any', 'these', 'give', 'most', 'us',
+  'mine', 'yours', 'hers', 'ours', 'theirs',
+  'myself', 'yourself', 'himself', 'herself', 'itself', 'ourselves', 'themselves',
   // Code noise — common JS/HTML terms that leak into body text
   'function', 'var', 'return', 'true', 'false', 'null', 'undefined', 'this',
   'const', 'let', 'class', 'typeof', 'document', 'window', 'jquery',
@@ -68,19 +75,58 @@ const STOP_WORDS = new Set([
   'soon', 'recent', 'latest', 'new', 'menu', 'home', 'page',
   // German stop words — major Swiss language (DE/CH-DE sites). Found via
   // upc.ch smoke test where 'und' (and), 'die' (the), 'mit' (with), 'bis'
-  // (until) were polluting the top-12.
+  // (until) were polluting the top-12. Pronoun coverage extended after
+  // go-mo.ch leaked 'dir' as a keyword target.
   'der', 'die', 'das', 'den', 'dem', 'des',
   'ein', 'eine', 'einer', 'eines', 'einem', 'einen',
   'und', 'oder', 'aber', 'auch', 'als', 'wie', 'wenn', 'weil', 'dass',
   'ist', 'sind', 'war', 'waren', 'sein', 'haben', 'hat', 'hatte', 'wird', 'werden',
   'mit', 'für', 'von', 'auf', 'aus', 'bei', 'bis', 'nach', 'über', 'unter',
   'durch', 'gegen', 'ohne', 'um', 'vor', 'zwischen', 'seit',
-  'ich', 'mich', 'mir', 'wir', 'uns', 'unser', 'unsere',
-  'dein', 'deine', 'sein', 'seine',
-  'ihr', 'ihre', 'ihrer',
+  'ich', 'mich', 'mir',
+  'du', 'dich', 'dir',
+  'er', 'es', 'ihn', 'ihm',
+  'wir', 'uns', 'unser', 'unsere',
+  'ihr', 'ihre', 'ihrer', 'euch', 'euer', 'eure',
+  'sie', 'ihnen',
+  'dein', 'deine', 'mein', 'meine', 'seine',
   'nicht', 'kein', 'keine', 'nur', 'noch', 'auch', 'mehr', 'alle', 'alles',
   'jetzt', 'heute', 'morgen', 'gestern', 'bald',
   'diese', 'dieser', 'dieses', 'jene', 'jener',
+  // Italian — 4th Swiss official language (~8% pop., Ticino + Grisons).
+  // Was completely absent until now. Same shape as DE: articles,
+  // prepositions, auxiliaries, full pronoun set, demonstratives.
+  // Articles + indef
+  'il', 'lo', 'gli', 'i', 'un', 'uno',
+  // Conjunctions
+  'ed', 'anche', 'ma', 'mentre', 'perché', 'perche', 'quando', 'come',
+  'oppure',
+  // Prepositions (simple + articulate)
+  'di', 'da', 'su', 'per', 'tra', 'fra',
+  'al', 'allo', 'alla', 'agli', 'alle', 'ai',
+  'dal', 'dallo', 'dalla', 'dagli', 'dalle', 'dai',
+  'del', 'dello', 'della', 'degli', 'delle', 'dei',
+  'nel', 'nello', 'nella', 'negli', 'nelle', 'nei',
+  'sul', 'sullo', 'sulla', 'sugli', 'sulle', 'sui',
+  // Aux + common verbs
+  'è', 'sono', 'sei', 'siamo', 'siete', 'era', 'erano', 'sarà', 'saranno',
+  'ho', 'ha', 'hai', 'hanno', 'abbiamo', 'avete', 'avere', 'essere',
+  // Full pronoun set (subjects + clitics + reflexives)
+  'io', 'lei', 'noi', 'voi', 'loro',
+  'mi', 'ti', 'ci', 'vi', 'sé',
+  // Possessives (m/f, sing/plur)
+  'mio', 'mia', 'miei', 'mie',
+  'tuo', 'tua', 'tuoi', 'tue',
+  'suo', 'sua', 'suoi', 'sue',
+  'nostro', 'nostra', 'nostri', 'nostre',
+  'vostro', 'vostra', 'vostri', 'vostre',
+  // Common adverbs / quantifiers / negation
+  'già', 'gia', 'ancora', 'sempre', 'mai', 'molto', 'poco', 'troppo', 'tanto',
+  'tutto', 'tutti', 'tutta', 'tutte',
+  'qui', 'qua', 'lì', 'là', 'ora', 'oggi', 'ieri', 'domani', 'presto',
+  // Demonstratives
+  'questo', 'questa', 'questi', 'queste',
+  'quello', 'quella', 'quelli', 'quelle',
 ]);
 
 /**

@@ -205,6 +205,89 @@ describe('Extended stopwords (P9.3)', () => {
     expect(words).not.toContain('der');
   });
 
+  // Pronoun coverage extended after go-mo.ch (DE telco) leaked 'dir'
+  // ("you/yours" dative) as a top-3 keyword target. Pronouns are pure
+  // grammar fillers and must never surface as SEO targets.
+
+  it('filters DE personal pronouns (du/dich/dir/er/es) — regression for go-mo.ch', () => {
+    const html = `
+      <html lang="de"><body>
+      <p>Du bekommst dein Abo. Dir gefällt es. Dich überzeugt der Preis. Du.
+      Du Du Du dir dir dir dich dich dein dein. Er kommt. Es ist da. Sie auch.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    for (const w of ['du', 'dich', 'dir', 'dein', 'er', 'es', 'sie']) {
+      expect(words, `'${w}' should be filtered`).not.toContain(w);
+    }
+  });
+
+  it('filters FR personal pronouns (je/tu/te/moi/toi/eux)', () => {
+    const html = `
+      <html lang="fr"><body>
+      <p>Je découvre. Tu choisis. Te plaire. Moi je préfère. Toi aussi.
+      Eux aussi. Je je je tu tu tu moi moi toi toi te te eux eux.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    for (const w of ['je', 'tu', 'te', 'moi', 'toi', 'eux']) {
+      expect(words, `'${w}' should be filtered`).not.toContain(w);
+    }
+  });
+
+  it('filters EN reflexives + absolute possessives (yours/myself/themselves)', () => {
+    const html = `
+      <html lang="en"><body>
+      <p>This is yours. The choice is mine. Hers is here. Ours too. Theirs.
+      Myself yourself himself herself itself ourselves themselves.
+      yours yours yours mine mine mine myself myself themselves themselves.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    for (const w of ['yours', 'mine', 'hers', 'ours', 'theirs', 'myself', 'yourself', 'themselves']) {
+      expect(words, `'${w}' should be filtered`).not.toContain(w);
+    }
+  });
+
+  it('filters IT articles + pronouns + prepositions (4ᵉ langue officielle CH)', () => {
+    const html = `
+      <html lang="it"><body>
+      <p>Il prodotto è ottimo. La nostra offerta. Lo scopri. Gli amici.
+      Io tu lui lei noi voi loro. Mi ti ci vi si.
+      Di da in con su per. Del della dei delle. Questo questa quello quella.
+      Il il il la la la lo lo lo gli gli io io io lui lui lei lei.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    for (const w of [
+      'il', 'la', 'lo', 'gli', 'le',
+      'io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro',
+      'di', 'da', 'in', 'su', 'per',
+      'del', 'della', 'dei', 'delle',
+      'questo', 'questa', 'quello', 'quella',
+    ]) {
+      expect(words, `'${w}' should be filtered`).not.toContain(w);
+    }
+  });
+
+  it('filters IT auxiliaries + adverbs (è/sono/molto/sempre)', () => {
+    const html = `
+      <html lang="it"><body>
+      <p>È buono. Sono qui. Hai capito. Hanno deciso. Molto bene. Sempre presente.
+      è è è sono sono sono molto molto sempre sempre tutto tutto tutto tutti tutti.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    for (const w of ['è', 'sono', 'hai', 'hanno', 'molto', 'sempre', 'tutto', 'tutti']) {
+      expect(words, `'${w}' should be filtered`).not.toContain(w);
+    }
+  });
+
   it('does NOT filter geography (could be a legit travel/local keyword)', () => {
     const html = `
       <html><head><title>Voyages en Suisse</title></head><body>

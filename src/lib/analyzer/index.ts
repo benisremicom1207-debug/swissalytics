@@ -9,6 +9,7 @@ import { analyzeTechnical } from './technical';
 import { analyzeMetadata } from './metadata';
 import { analyzeReadability } from './readability';
 import { analyzeKeywords } from './keywords';
+import { detectSpa } from './spa-detection';
 import { calculateGlobalScore } from './score';
 
 async function fetchHtml(url: string, maxRedirects = 5): Promise<{ html: string; headers: Record<string, string> }> {
@@ -100,11 +101,14 @@ export async function analyzePage(url: string): Promise<AnalysisResult> {
     headings, images, links, technical, metadata, readability, keywords,
   });
 
+  const spa = detectSpa($, html);
+
   return {
     url: normalizedUrl,
     timestamp: new Date().toISOString(),
     score,
     keywords,
     headings, images, links, technical, metadata, readability,
+    spa,
   };
 }

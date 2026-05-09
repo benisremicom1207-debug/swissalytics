@@ -7,6 +7,7 @@ import type {
   EeatSignals,
   LighthouseScores,
 } from '@/lib/analyzers/types';
+import SpaWarning from './SpaWarning';
 
 /**
  * GeoTabContent — 4ᵉ onglet "Indexation IA / GEO".
@@ -27,11 +28,17 @@ export function GeoTabContent({ report, isFr }: GeoTabContentProps) {
   const geo = report.geoAnalysis;
 
   if (!geo) {
-    return <GeoEmptyState isFr={isFr} />;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        {report.spa && <SpaWarning spa={report.spa} />}
+        <GeoEmptyState isFr={isFr} />
+      </div>
+    );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      {report.spa && <SpaWarning spa={report.spa} />}
       <IndexationPanel indexation={geo.geo.indexation} isFr={isFr} />
       <SchemaPanel schema={geo.geo.schema} isFr={isFr} />
       <EeatPanel eeat={geo.geo.eeat} isFr={isFr} />
