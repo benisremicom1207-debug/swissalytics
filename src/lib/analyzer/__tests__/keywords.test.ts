@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as cheerio from 'cheerio';
-import { analyzeKeywords, getBrandVariants, getBrandPrincipal } from '../keywords';
+import { analyzeKeywords, getBrandVariants, getBrandPrincipal, selectTopTargets } from '../keywords';
+import type { KeywordInfo } from '@/lib/types';
 
 /**
  * P9.1 — brand exclusion. Pre-fix, sites like sunrise.ch had "sunrise"
@@ -188,6 +189,22 @@ describe('Extended stopwords (P9.3)', () => {
     expect(words).not.toContain('lorsqu');
   });
 
+  it('filters German stop words (DE/CH-DE Swiss sites)', () => {
+    const html = `
+      <html lang="de"><body>
+      <p>Die Internet-Verbindung ist schnell. Mit der Mobile-App und ohne Probleme.
+      Wir bieten den Service für alle. Das ist die beste Lösung. Bei uns mit der.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    expect(words).not.toContain('und');
+    expect(words).not.toContain('die');
+    expect(words).not.toContain('mit');
+    expect(words).not.toContain('das');
+    expect(words).not.toContain('der');
+  });
+
   it('does NOT filter geography (could be a legit travel/local keyword)', () => {
     const html = `
       <html><head><title>Voyages en Suisse</title></head><body>
@@ -200,6 +217,112 @@ describe('Extended stopwords (P9.3)', () => {
     const words = result.keywords.map((k) => k.word);
     // 'suisse' is a legit keyword for a travel site — must NOT be filtered
     expect(words).toContain('suisse');
+  });
+});
+
+describe('selectTopTargets — multi-keyword dedup (P13)', () => {
+  // Real-world salt.ch top-12 (from smoke test)
+  const saltKeywords: KeywordInfo[] = [
+    { word: 'internet', count: 67 },
+    { word: 'mobile', count: 45 },
+    { word: 'order', count: 29 },
+    { word: 'unlimited calls', count: 27 },
+    { word: 'unlimited', count: 25 },
+    { word: 'free', count: 25 },
+    { word: 'mobile subscription', count: 24 },
+    { word: 'islands', count: 24 },
+    { word: 'including', count: 24 },
+    { word: 'internet at maximum', count: 24 },
+    { word: 'unlimited calls sms', count: 24 },
+    { word: 'subscription', count: 22 },
+  ];
+
+  it('returns the top N candidates when no overlaps exist', () => {
+    const out = selectTopTargets(saltKeywords, 3);
+    expect(out).toHaveLength(3);
+    expect(out.map((k) => k.word)).toEqual(['internet', 'mobile', 'order']);
+  });
+
+  it('skips n-gram variants that share a word with an already-selected target', () => {
+    const out = selectTopTargets(saltKeywords, 3);
+    const words = out.map((k) => k.word);
+    // "internet at maximum" and "mobile subscription" must NOT appear —
+    // they overlap with "internet" and "mobile" respectively.
+    expect(words).not.toContain('internet at maximum');
+    expect(words).not.toContain('mobile subscription');
+    expect(words).not.toContain('unlimited calls sms');
+  });
+
+  it('returns fewer than N when not enough distinct themes exist', () => {
+    const onlyOneTheme: KeywordInfo[] = [
+      { word: 'internet', count: 50 },
+      { word: 'internet mobile', count: 40 },
+      { word: 'internet at home', count: 30 },
+    ];
+    const out = selectTopTargets(onlyOneTheme, 3);
+    expect(out).toHaveLength(1);
+    expect(out[0].word).toBe('internet');
+  });
+
+  it('returns empty array when input is empty', () => {
+    expect(selectTopTargets([], 3)).toEqual([]);
+  });
+
+  it('respects the n parameter (e.g. n=5 surfaces 5 distinct themes if available)', () => {
+    const out = selectTopTargets(saltKeywords, 5);
+    expect(out.length).toBeGreaterThanOrEqual(3);
+    // Each pair of selected entries must share zero words
+    for (let i = 0; i < out.length; i++) {
+      for (let j = i + 1; j < out.length; j++) {
+        const wordsA = new Set(out[i].word.split(' '));
+        const wordsB = out[j].word.split(' ');
+        expect(wordsB.some((w) => wordsA.has(w))).toBe(false);
+      }
+    }
+  });
+});
+
+describe('analyzeKeywords integration with targets', () => {
+  it('exposes targets[] alongside placement, with primary as targets[0]', () => {
+    const html = `
+      <html><head><title>Internet et mobile</title></head><body>
+      <h1>Internet et mobile</h1>
+      <p>Notre offre internet et mobile. L'internet rapide. Le mobile illimité.
+      Carte SIM gratuite. Carte SIM pour tous.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    expect(result.targets).toBeDefined();
+    expect(result.targets.length).toBeGreaterThan(0);
+    expect(result.targets[0].word).toBe(result.placement?.primary);
+  });
+
+  it('returns targets: [] when no keywords detected', () => {
+    const $ = cheerio.load('<html><body></body></html>');
+    const result = analyzeKeywords($);
+    expect(result.targets).toEqual([]);
+  });
+
+  it('each target carries its own placement check', () => {
+    const html = `
+      <html><head>
+        <title>Internet et mobile illimité</title>
+        <meta name="description" content="Mobile illimité chez nous">
+      </head><body>
+      <h1>Internet et mobile illimité</h1>
+      <p>Notre internet est rapide. Le mobile illimité partout. Carte SIM. Sim gratuite.
+      Internet partout. Mobile partout. Carte SIM partout.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    // Each target should have inTitle/inH1/inMeta/inFirst100 booleans
+    for (const t of result.targets) {
+      expect(typeof t.inTitle).toBe('boolean');
+      expect(typeof t.inH1).toBe('boolean');
+      expect(typeof t.inMetaDescription).toBe('boolean');
+      expect(typeof t.inFirst100Words).toBe('boolean');
+      expect(typeof t.score).toBe('number');
+    }
   });
 });
 
