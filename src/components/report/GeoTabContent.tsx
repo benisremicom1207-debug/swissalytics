@@ -227,8 +227,25 @@ function EngineCard({
   isLastRow: boolean;
 }) {
   const displayName = engine.name || id.charAt(0).toUpperCase() + id.slice(1);
-  const indexedColor = engine.indexed ? 'var(--sa-green, #2d8e4f)' : 'var(--sa-ink-4)';
+  const hasError = !!engine.error;
   const confidenceLabel = formatConfidence(engine.confidence, isFr);
+
+  // Trois états visuels distincts :
+  //   - error (orange) : l'API du moteur a échoué (404 modèle déprécié, 401 clé révoquée…).
+  //                      Évite d'afficher un faux "non indexé" qui ressemble à un signal réel.
+  //   - indexed (vert) : le moteur connaît la marque
+  //   - not indexed (gris) : le moteur a répondu mais ne connaît pas la marque
+  const badgeColor = hasError
+    ? 'var(--sa-amber-ink, #b88600)'
+    : engine.indexed
+    ? 'var(--sa-green, #2d8e4f)'
+    : 'var(--sa-ink-4)';
+  const badgeIcon = hasError ? '!' : engine.indexed ? '✓' : '×';
+  const badgeLabel = hasError
+    ? (isFr ? 'Moteur indisponible' : 'Engine unavailable')
+    : engine.indexed
+    ? (isFr ? 'Indexé' : 'Indexed')
+    : (isFr ? 'Non indexé' : 'Not indexed');
 
   return (
     <div
@@ -254,22 +271,22 @@ function EngineCard({
           {displayName}
         </div>
         <span
-          aria-label={engine.indexed ? (isFr ? 'Indexé' : 'Indexed') : (isFr ? 'Non indexé' : 'Not indexed')}
-          title={engine.indexed ? (isFr ? 'Indexé' : 'Indexed') : (isFr ? 'Non indexé' : 'Not indexed')}
+          aria-label={badgeLabel}
+          title={hasError ? `${badgeLabel} — ${engine.error}` : badgeLabel}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             width: 22,
             height: 22,
-            background: indexedColor,
+            background: badgeColor,
             color: 'var(--sa-cream)',
             fontSize: 13,
             fontWeight: 700,
             borderRadius: 0,
           }}
         >
-          {engine.indexed ? '✓' : '×'}
+          {badgeIcon}
         </span>
       </div>
 
@@ -287,24 +304,41 @@ function EngineCard({
         </div>
       )}
 
-      <div
-        className="mono"
-        style={{
-          display: 'flex',
-          gap: 8,
-          fontSize: 10,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: 'var(--sa-ink-3)',
-          marginTop: 'auto',
-        }}
-      >
-        <span>{confidenceLabel}</span>
-        <span>·</span>
-        <span>
-          {engine.mentions} {isFr ? 'mentions' : 'mentions'}
-        </span>
-      </div>
+      {hasError ? (
+        <div
+          className="mono"
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--sa-amber-ink, #b88600)',
+            marginTop: 'auto',
+            fontWeight: 700,
+          }}
+          title={engine.error}
+        >
+          {isFr ? '⚠ Test impossible' : '⚠ Test failed'}
+        </div>
+      ) : (
+        <div
+          className="mono"
+          style={{
+            display: 'flex',
+            gap: 8,
+            fontSize: 10,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--sa-ink-3)',
+            marginTop: 'auto',
+          }}
+        >
+          <span>{confidenceLabel}</span>
+          <span>·</span>
+          <span>
+            {engine.mentions} {isFr ? 'mentions' : 'mentions'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
