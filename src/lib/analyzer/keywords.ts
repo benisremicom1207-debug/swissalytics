@@ -119,18 +119,58 @@ const SECTION_WEIGHTS = {
   body: 1,
 } as const;
 
-function tokenize(text: string, brandVariants: Set<string>): string[] {
+/**
+ * N-gram size boosts (P9.2) — multiplied with the section weight when a
+ * sequence of N consecutive candidate words appears. Compensates for the
+ * natural rarity of multi-word phrases vs single words: without a boost
+ * "internet" (37 mentions) would always crush "internet mobile" (5).
+ *
+ *   1 = baseline      (single word, no boost)
+ *   2 = ×1.5          (bigrams: "carte sim", "abonnement mobile")
+ *   3 = ×2            (trigrams: "abonnement internet illimité")
+ */
+const N_GRAM_BOOSTS: Record<1 | 2 | 3, number> = { 1: 1, 2: 1.5, 3: 2 };
+
+function isCandidateWord(w: string, brandVariants: Set<string>): boolean {
+  return (
+    w.length >= 3 &&
+    !STOP_WORDS.has(w) &&
+    !brandVariants.has(w) &&
+    !/^\d+$/.test(w) &&
+    !/^[a-z]$/.test(w)
+  );
+}
+
+function rawTokenize(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-zàâäéèêëïîôùûüÿç0-9\s-]/g, ' ')
     .split(/\s+/)
-    .filter(w =>
-      w.length >= 3 &&
-      !STOP_WORDS.has(w) &&
-      !brandVariants.has(w) &&
-      !/^\d+$/.test(w) &&
-      !/^[a-z]$/.test(w),
-    );
+    .filter(w => w.length > 0);
+}
+
+/**
+ * Extract n-grams from a token list. For n=1 this is just the candidate
+ * words filter. For n>1 we require BOTH the first and last token to be
+ * candidates (so "à très haut" is rejected — both 'à' and 'très' are
+ * stop words at the boundary). Internal stop words are tolerated to
+ * keep useful phrases like "carte de fidélité" (where "de" is internal).
+ */
+function extractNGrams(
+  tokens: string[],
+  n: 1 | 2 | 3,
+  brandVariants: Set<string>,
+): string[] {
+  if (n === 1) {
+    return tokens.filter(w => isCandidateWord(w, brandVariants));
+  }
+  const out: string[] = [];
+  for (let i = 0; i + n <= tokens.length; i++) {
+    if (!isCandidateWord(tokens[i], brandVariants)) continue;
+    if (!isCandidateWord(tokens[i + n - 1], brandVariants)) continue;
+    out.push(tokens.slice(i, i + n).join(' '));
+  }
+  return out;
 }
 
 function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo[] {
@@ -147,9 +187,14 @@ function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo
 
   const freq: Record<string, number> = {};
   for (const section of sections) {
-    const words = tokenize(section.text, brandVariants);
-    for (const word of words) {
-      freq[word] = (freq[word] || 0) + section.weight;
+    const tokens = rawTokenize(section.text);
+    for (const n of [1, 2, 3] as const) {
+      const ngrams = extractNGrams(tokens, n, brandVariants);
+      const boost = N_GRAM_BOOSTS[n];
+      const weight = section.weight * boost;
+      for (const ngram of ngrams) {
+        freq[ngram] = (freq[ngram] || 0) + weight;
+      }
     }
   }
 

@@ -75,12 +75,15 @@ describe('analyzeKeywords with brand exclusion', () => {
     expect(words).not.toContain('sunrise');
   });
 
-  it('promotes the next-best legitimate keyword as primary', () => {
+  it('promotes a legitimate (internet-themed) keyword as primary, not the brand', () => {
     const $ = cheerio.load(html);
     const result = analyzeKeywords($, 'https://sunrise.ch/');
     expect(result.placement?.primary).not.toBe('sunrise');
-    // 'internet' is the legitimate top keyword in this fixture
-    expect(result.placement?.primary).toBe('internet');
+    // After P9.2 (n-grams) the primary may be a single word ("internet") OR
+    // a multi-word phrase ("internet mobile", "internet et mobile") — both
+    // are valid SEO signals from this fixture. Pin only what we care about:
+    // the brand is gone, and the top keyword is internet-themed.
+    expect(result.placement?.primary).toMatch(/internet/);
   });
 
   it('still surfaces the brand on placement.brand for the UI', () => {
@@ -125,9 +128,11 @@ describe('Position weighting (P9.4)', () => {
   it('title+H1 keywords outrank body-only keywords with equal raw frequency', () => {
     const $ = cheerio.load(html);
     const result = analyzeKeywords($);
-    // crypto appears 2× (title + h1) → 10 + 8 = 18 weighted
-    // cooking appears ~13× in body → 13 weighted
-    expect(result.placement?.primary).toBe('crypto');
+    // After P9.2 the trigram "crypto trading platform" wins (appears in
+    // title+h1+meta with the trigram boost). Either way, the primary
+    // should be crypto-themed, not body-themed (cooking).
+    expect(result.placement?.primary).toMatch(/crypto/);
+    expect(result.placement?.primary).not.toMatch(/cooking/);
   });
 
   it('body-only keywords still surface in the top 15', () => {
@@ -135,5 +140,46 @@ describe('Position weighting (P9.4)', () => {
     const result = analyzeKeywords($);
     const words = result.keywords.map((k) => k.word);
     expect(words).toContain('cooking');
+  });
+});
+
+describe('N-gram extraction (P9.2)', () => {
+  it('surfaces bigrams alongside unigrams in the keyword list', () => {
+    const html = `
+      <html><head><title>Carte SIM mobile</title></head><body>
+      <h1>Carte SIM mobile</h1>
+      <p>Notre carte SIM est gratuite. La carte SIM mobile illimitée. Carte SIM Carte SIM.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    expect(words).toContain('carte sim');
+  });
+
+  it('rejects n-grams whose first or last token is a stop word', () => {
+    const html = `
+      <html><body>
+      <p>très haut débit, à très haut, le mobile est rapide, sans engagement</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    // 'à très haut' starts with stop word 'à' → must be rejected
+    expect(words).not.toContain('à très haut');
+    // 'mobile est' ends with stop word 'est' → rejected
+    expect(words).not.toContain('mobile est');
+  });
+
+  it('tolerates internal stop words in trigrams (so "carte de fidélité" works)', () => {
+    const html = `
+      <html><body>
+      <p>Notre carte de fidélité est gratuite. La carte de fidélité offre des points.
+      Programme carte de fidélité avec carte de fidélité numérique.</p>
+      </body></html>`;
+    const $ = cheerio.load(html);
+    const result = analyzeKeywords($);
+    const words = result.keywords.map((k) => k.word);
+    // 'de' is internal — trigram should pass since 'carte' and 'fidélité' are candidates
+    expect(words).toContain('carte de fidélité');
   });
 });
