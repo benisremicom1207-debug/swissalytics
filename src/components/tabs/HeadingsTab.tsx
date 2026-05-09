@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import type { HeadingsAnalysis, KeywordsAnalysis } from '@/lib/types';
+import type { SpaDetection } from '@/lib/analyzer/spa-detection';
 import { CheckCircle2, Globe, Type, Target } from 'lucide-react';
 import IssuesList from '../IssuesList';
 import CTABanner from '../CTABanner';
 import InfoBox from '../InfoBox';
+import SpaWarning from '../report/SpaWarning';
 
 function LengthGauge({ value, min, max, label }: { value: number; min: number; max: number; label: string }) {
   const total = max + 40;
@@ -45,7 +47,7 @@ function LengthGauge({ value, min, max, label }: { value: number; min: number; m
   );
 }
 
-export default function HeadingsTab({ data, keywords, url }: { data: HeadingsAnalysis; keywords?: KeywordsAnalysis; url?: string }) {
+export default function HeadingsTab({ data, keywords, url, spa }: { data: HeadingsAnalysis; keywords?: KeywordsAnalysis; url?: string; spa?: SpaDetection }) {
   const [showAllHeadings, setShowAllHeadings] = useState(false);
 
   const headingGroups = [
@@ -68,6 +70,8 @@ export default function HeadingsTab({ data, keywords, url }: { data: HeadingsAna
   return (
     <div className="bg-surface-secondary border border-border-primary rounded-2xl p-6 md:p-8">
       <div className="space-y-10">
+
+        {spa && <SpaWarning spa={spa} />}
 
         {/* 1. Title & Meta Description Gauges (most actionable) */}
         <div>

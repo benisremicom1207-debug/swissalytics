@@ -83,6 +83,7 @@ export interface AccessibilityBasics {
 }
 
 import type { GeoAnalysisResult } from './analyzers/types';
+import type { SpaDetection } from './analyzer/spa-detection';
 
 export interface AnalysisResult {
   url: string;
@@ -95,6 +96,13 @@ export interface AnalysisResult {
   technical: TechnicalAnalysis;
   metadata: MetadataAnalysis;
   readability: ReadabilityAnalysis;
+  /**
+   * SPA-shell detection — flagged when the static HTML has no headings AND
+   * very thin body (true content is JS-rendered). Used by HeadingsTab and
+   * GeoTabContent to surface a pedagogical banner explaining that AI
+   * crawlers (GPTBot, ClaudeBot, …) won't see the JS-rendered content.
+   */
+  spa?: SpaDetection;
   /** Decorated async by `/api/geo-analyze` after the main /analyze response. */
   geoAnalysis?: GeoAnalysisResult;
 }
