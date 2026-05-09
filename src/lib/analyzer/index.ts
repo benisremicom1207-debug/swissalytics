@@ -84,7 +84,7 @@ export async function analyzePage(url: string): Promise<AnalysisResult> {
   const $ = cheerio.load(html);
 
   // Extract keywords BEFORE readability (which removes script/style tags)
-  const keywords = analyzeKeywords($);
+  const keywords = analyzeKeywords($, normalizedUrl);
   const primaryKeyword = keywords.placement?.primary;
 
   const [headings, images, links, metadata, readability, technical] = await Promise.all([

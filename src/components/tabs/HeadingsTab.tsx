@@ -135,9 +135,18 @@ export default function HeadingsTab({ data, keywords, url }: { data: HeadingsAna
               />
             </h3>
             <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-5 mb-4">
-              <div className="text-sm text-text-tertiary mb-3">
+              <div className="text-sm text-text-tertiary mb-1">
                 Mot-clé détecté : <span className="font-bold text-text-primary">« {keywords.placement.primary} »</span>
               </div>
+              {keywords.placement.brand && (
+                <div className="text-xs text-text-tertiary mb-3 font-mono uppercase tracking-wider">
+                  § Marque détectée : <span className="font-bold">{keywords.placement.brand}</span>
+                  {typeof keywords.placement.brandMentions === 'number' && keywords.placement.brandMentions > 0 && (
+                    <> ({keywords.placement.brandMentions}×)</>
+                  )}
+                  {' — exclue du calcul SEO'}
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                   { label: 'Title', ok: keywords.placement.inTitle },

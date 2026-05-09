@@ -13,6 +13,15 @@ export interface KeywordPlacement {
   densityStatus: 'low' | 'optimal' | 'high';
   totalWords: number;
   keywordCount: number;
+  /**
+   * Brand name detected from the URL (P9.1) — surfaced separately in the UI
+   * because brand mentions ARE expected to be high but shouldn't drive SEO
+   * keyword targeting. Lets us tell the user "your brand is X, but your
+   * SEO target keywords are Y, Z" instead of conflating both.
+   */
+  brand?: string;
+  /** Number of times the brand was mentioned in body text (informational). */
+  brandMentions?: number;
 }
 
 export interface KeywordsAnalysis {

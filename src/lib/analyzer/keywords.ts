@@ -44,7 +44,65 @@ const STOP_WORDS = new Set([
   'localite', 'prix', 'display', 'none', 'flex', 'inline',
 ]);
 
-function extractKeywords($: CheerioAPI): KeywordInfo[] {
+/**
+ * Brand exclusion (P9.1) — return the set of brand-derived words to filter
+ * out of the candidate keywords. Without this, sites that name themselves
+ * heavily ("Sunrise" on sunrise.ch, "Pixelab" on pixelab.ch) end up with
+ * the brand name as their detected primary keyword, which is useless for
+ * SEO targeting and triggers absurd alerts ("brand absent du H1").
+ *
+ * Conservative rules:
+ *   - strip leading www. and the final TLD label
+ *   - split remaining hostname on '.' and '-'
+ *   - keep parts of length >= 3 (so 'co'/'uk' from example.co.uk don't fire)
+ *   - also include the de-hyphenated concatenation (pixelab-ch → pixelabch)
+ */
+export function getBrandVariants(url: string | undefined): Set<string> {
+  if (!url) return new Set();
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return new Set();
+  }
+  host = host.replace(/^www\./, '');
+  const labels = host.split('.');
+  if (labels.length > 1) labels.pop(); // drop TLD
+
+  const variants = new Set<string>();
+  for (const label of labels) {
+    for (const part of label.split('-')) {
+      if (part.length >= 3) variants.add(part);
+    }
+    const concat = label.replace(/-/g, '');
+    if (concat.length >= 3) variants.add(concat);
+  }
+  return variants;
+}
+
+/**
+ * Best human-readable brand label for display — typically the first
+ * hostname label minus TLD. Returns undefined if URL can't be parsed.
+ *   sunrise.ch              → 'sunrise'
+ *   www.pixelab-design.com  → 'pixelab-design'
+ *   blog.example.co.uk      → 'blog' (subdomain wins; rare in practice)
+ */
+export function getBrandPrincipal(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+  host = host.replace(/^www\./, '');
+  const labels = host.split('.');
+  if (labels.length > 1) labels.pop();
+  const first = labels[0];
+  return first && first.length >= 2 ? first : undefined;
+}
+
+function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo[] {
   const titleText = $('title').text().trim();
   const h1Text = $('h1').map((_, el) => $(el).text().trim()).get().join(' ');
   const h2Text = $('h2').map((_, el) => $(el).text().trim()).get().join(' ');
@@ -70,7 +128,13 @@ function extractKeywords($: CheerioAPI): KeywordInfo[] {
     .toLowerCase()
     .replace(/[^a-zàâäéèêëïîôùûüÿç0-9\s-]/g, ' ')
     .split(/\s+/)
-    .filter(w => w.length >= 3 && !STOP_WORDS.has(w) && !/^\d+$/.test(w) && !/^[a-z]$/.test(w));
+    .filter(w =>
+      w.length >= 3 &&
+      !STOP_WORDS.has(w) &&
+      !brandVariants.has(w) &&
+      !/^\d+$/.test(w) &&
+      !/^[a-z]$/.test(w),
+    );
 
   const freq: Record<string, number> = {};
   for (const word of words) {
@@ -83,8 +147,9 @@ function extractKeywords($: CheerioAPI): KeywordInfo[] {
     .map(([word, count]) => ({ word, count }));
 }
 
-export function analyzeKeywords($: CheerioAPI): KeywordsAnalysis {
-  const keywords = extractKeywords($);
+export function analyzeKeywords($: CheerioAPI, url?: string): KeywordsAnalysis {
+  const brandVariants = getBrandVariants(url);
+  const keywords = extractKeywords($, brandVariants);
   const issues: Issue[] = [];
 
   if (keywords.length === 0) {
@@ -145,6 +210,17 @@ export function analyzeKeywords($: CheerioAPI): KeywordsAnalysis {
     issues.push({ type: 'info', message: `Densité du mot-clé « ${primary} » faible (${density.toFixed(1)}%) — envisagez de l'utiliser davantage` });
   }
 
+  // P9.1 — surface the brand separately for the UI ("brand detected: sunrise (75×)")
+  // even though it was excluded from candidate keywords. Counts mentions in body
+  // text only (matches how density/totalWords are computed above).
+  const brand = getBrandPrincipal(url);
+  let brandMentions: number | undefined;
+  if (brand) {
+    const brandEscaped = brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const brandRegex = new RegExp(`\\b${brandEscaped}\\b`, 'gi');
+    brandMentions = (bodyText.match(brandRegex) || []).length;
+  }
+
   const placement: KeywordPlacement = {
     primary,
     inTitle,
@@ -155,6 +231,8 @@ export function analyzeKeywords($: CheerioAPI): KeywordsAnalysis {
     densityStatus,
     totalWords,
     keywordCount,
+    brand,
+    brandMentions,
   };
 
   return { keywords, placement, issues };
