@@ -1,8 +1,8 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : à créer pour P1 (P0 mergée dans `main` via PR #2 le 2026-05-07)
+**Branche en cours** : `feat/p2-async-enrich` (P0/P1/P6 mergées sur `main`)
 **Démarré** : 2026-05-04
-**Dernière maj** : 2026-05-07
+**Dernière maj** : 2026-05-09
 
 ## Légende
 - ☐ TODO
@@ -81,25 +81,25 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟢 #3 (squash-merged)
 
-### Phase 6 — Cleanup ☐
-**1 PR · 2026-05-07**
+### Phase 6 — Cleanup ✅
+**1 PR · mergée 2026-05-09**
 
 - ✅ **6.1** Code mort supprimé (1207 lignes) : `components/AnalyzerResults.tsx`, dossier `geo-analyzer/` entier (AnalyzerHero, AnalyzerLoading, AnalyzerResults, types.ts shim deprecated de P1)
 - ✅ **6.2** `deploy.sh` + `Dockerfile` supprimés (fossiles Docker/Jelastic, plus utilisés depuis le passage à systemd). Pas de README à nettoyer.
 - ✅ **6.3** `ReportView.tsx` 1302 → 381 L (-71%). 7 fichiers extraits : `Gauge.tsx`, `Scorecard.tsx`, `ShareButton.tsx`, `PlanBucket.tsx`, `OverviewContent.tsx`, `DetailsContent.tsx`, `PlanContent.tsx`. `StripCaptionBar` reste inline (30 L, utilisé seulement dans ReportView).
 
-**PR** : 🟢 (en cours d'ouverture)
+**PR** : 🟢 #4 (squash-merged)
 
 ### Phase 2 — Persister geoAnalysis + CWV en async ☐
-**1 PR · ~5 h · dépend P1, bloque P3 et P4**
+**1 PR · 2026-05-09 · dépend P1, bloque P3 et P4**
 
-- ☐ **2.1** Migration Supabase : colonnes `geo_analysis JSONB`, `cwv JSONB`
-- ☐ **2.2** Update `SupabaseReportsRepository` (storedToRow / rowToStored)
-- ☐ **2.3** Nouveau endpoint `PATCH /api/report/[id]/enrich`
-- ☐ **2.4** Frontend : `page.tsx` appelle l'enrich endpoint après les fetches geo + cwv
-- ☐ **2.5** Update `r/[id]/page.tsx` et `s/[slug]/page.tsx` pour exploiter les données enrichies stockées
+- ✅ **2.1** Migration Supabase appliquée sur prod : `ALTER TABLE reports ADD COLUMN geo_analysis JSONB, ADD COLUMN cwv JSONB` (fichier `20260509000000_add_enrichment_columns.sql`)
+- ✅ **2.2** `StoredReport` étendu (`geoAnalysis?`, `cwv?`), `ReportRow` + `storedToRow`/`rowToStored` mis à jour, méthode `enrich(id, patch)` ajoutée à l'interface `ReportsRepository` + impl Supabase. 3 nouveaux tests (19/19 pass).
+- ✅ **2.3** `PATCH /api/report/[id]/enrich` — accepte `{ geoAnalysis?, cwv? }`, validation shallow (objet non null), trust boundary identique à `/share`.
+- ✅ **2.4** `page.tsx` : helper `persistEnrichment(reportId, patch)` fire-and-forget, appelé après chaque `.then()` des fetches geo + cwv. Skip si `reportId === null` (mode degraded).
+- ✅ **2.5** `mergeEnrichment(stored)` dans `lib/engine/enrich.ts` — applique geoAnalysis + pénalité CWV sur `data` brut. Utilisé par `/api/report/[id]` GET et `/api/share/[slug]` GET.
 
-**PR** : —
+**PR** : 🟡 (en cours d'ouverture)
 
 ### Phase 3 — Visualiser le moteur GEO ☐
 **1 PR · ~8 h · dépend P1+P2 · bloqué par OQ1 · 🎨 Validation visuelle requise**
