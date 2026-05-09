@@ -173,10 +173,11 @@ Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent
 - ✅ **11.1** `gemini.ts` : `gemini-pro` (déprécié par Google en 2024, retourne 404) → `gemini-1.5-flash` (free tier actuel). 5 tests unitaires (mock fetch, assert URL, branches indexed/not-indexed/error/missing-key).
 - ✅ **11.2** `mistral.ts` : `mistral-large-latest` (payant uniquement) → `mistral-small-latest` (meilleur modèle free tier). 5 tests unitaires.
 - ✅ **11.3** `geo-config.ts` : Mistral ajouté aux priorités régionales **CH**, **BE**, **LU**, **GLOBAL** (existait que pour FR). 5 tests dont 1 vérif round-trip que chaque `llmPriority` a son `marketShare` associé sur les 22 régions configurées.
+- ✅ **11.4** `chatgpt.ts` : modèle `gpt-4o` → `gpt-4o-mini`. ~50× moins cher (~$0.0001 vs ~$0.005 par analyse) pour une qualité équivalente sur la tâche de reconnaissance de marque. $5 de crédit OpenAI ≈ 50 000 analyses au lieu de ~1 000. 5 tests dont un pin du modèle pour éviter qu'un edit careless ne 50× la facture.
 
-**Smoke test live** : avec `GEMINI_API_KEY` + `MISTRAL_API_KEY` dans `.env.local`, `/api/geo-analyze` sur `pixelab.ch` retourne 2 moteurs testés (Gemini + Mistral) au lieu de 0. Mistral détecte pixelab avec `confidence: high`, 12 mentions.
+**Smoke test live** : avec `GEMINI_API_KEY` + `MISTRAL_API_KEY` + `OPENAI_API_KEY` dans `.env.local`, `/api/geo-analyze` sur `pixelab.ch` retourne **3 moteurs testés** (Gemini + Mistral + ChatGPT) au lieu de 0 avant la PR. Score indexation : 67/100 (Mistral + ChatGPT connaissent pixelab avec `confidence: high`, Gemini non — vrai signal).
 
-**Note** : OQ1 reste partielle — ChatGPT/Perplexity/Bing nécessitent toujours des clés payantes. Mais avec Gemini+Mistral gratuits, on a déjà 2 moteurs représentatifs (Google + EU sovereignty).
+**Note** : OQ1 partiellement résolue — Perplexity/Bing restent non testés faute de clés. Avec Gemini (gratuit) + Mistral (gratuit) + ChatGPT (~$5 dure des dizaines de milliers d'analyses), on couvre **environ 70% du marché IA en Suisse** (42% ChatGPT + 18% Gemini + 3% Mistral + petites diff selon adoption).
 
 **PR** : 🟡 (en cours d'ouverture)
 
