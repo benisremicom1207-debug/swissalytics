@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { LinksAnalysis, LinkInfo } from '@/lib/types';
+import { groupLinksByHref } from '@/lib/analyzer/dedup-links';
 import IssuesList from '../IssuesList';
 import CTABanner from '../CTABanner';
 import InfoBox from '../InfoBox';
@@ -42,15 +43,19 @@ function attrChip(label: string, color: string) {
 
 function LinkTable({ links, title }: { links: LinkInfo[]; title: string }) {
   const [showAll, setShowAll] = useState(false);
-  const displayed = showAll ? links : links.slice(0, 10);
+  // P10: dedup display by canonical href. The raw count (links.length)
+  // stays exposed in the section title so users see the duplication
+  // exists; the table itself shows one row per unique URL.
+  const deduped = groupLinksByHref(links);
+  const displayed = showAll ? deduped : deduped.slice(0, 10);
 
   if (links.length === 0) return null;
   return (
     <section>
       <SectionHeader
-        title={`${title} (${links.length})`}
+        title={`${title} — ${deduped.length} URL${deduped.length > 1 ? 's' : ''} unique${deduped.length > 1 ? 's' : ''} (${links.length} liens DOM)`}
         rightSlot={
-          links.length > 10 ? (
+          deduped.length > 10 ? (
             <button
               onClick={() => setShowAll(!showAll)}
               className="mono"
@@ -66,7 +71,7 @@ function LinkTable({ links, title }: { links: LinkInfo[]; title: string }) {
                 cursor: 'pointer',
               }}
             >
-              {showAll ? 'Réduire' : `Tout afficher (${links.length})`}
+              {showAll ? 'Réduire' : `Tout afficher (${deduped.length})`}
             </button>
           ) : null
         }
@@ -79,7 +84,7 @@ function LinkTable({ links, title }: { links: LinkInfo[]; title: string }) {
                 URL
               </th>
               <th className="mono" style={{ textAlign: 'left', padding: '10px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
-                Texte d&apos;ancrage
+                Texte(s) d&apos;ancrage
               </th>
               <th className="mono" style={{ textAlign: 'left', padding: '10px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
                 Attributs
@@ -88,16 +93,36 @@ function LinkTable({ links, title }: { links: LinkInfo[]; title: string }) {
           </thead>
           <tbody>
             {displayed.map((link, i) => (
-              <tr key={i} style={{ borderBottom: i < displayed.length - 1 ? '1px solid var(--sa-rule)' : 'none' }}>
+              <tr key={`${link.href}-${i}`} style={{ borderBottom: i < displayed.length - 1 ? '1px solid var(--sa-rule)' : 'none' }}>
                 <td style={{ padding: '10px 12px', maxWidth: 280 }}>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--sa-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                    {link.href}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono" style={{ fontSize: 11, color: 'var(--sa-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
+                      {link.href}
+                    </span>
+                    {link.count > 1 && (
+                      <span
+                        className="mono tnum"
+                        title={`${link.count} occurrences DOM`}
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: '0.04em',
+                          padding: '2px 6px',
+                          border: '1px solid var(--sa-rule)',
+                          background: 'var(--sa-cream)',
+                          color: 'var(--sa-ink-4)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        ×{link.count}
+                      </span>
+                    )}
+                  </div>
                 </td>
-                <td style={{ padding: '10px 12px', maxWidth: 220 }}>
-                  {link.text ? (
-                    <span style={{ color: 'var(--sa-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                      {link.text}
+                <td style={{ padding: '10px 12px', maxWidth: 240 }}>
+                  {link.texts.length > 0 ? (
+                    <span style={{ color: 'var(--sa-ink-2)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {link.texts.join(' · ')}
                     </span>
                   ) : (
                     <em style={{ color: 'var(--sa-warn)', fontSize: 11 }}>Aucun texte</em>
