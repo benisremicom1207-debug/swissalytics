@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Shell from '@/components/design-system/Shell';
 import ReportView from '@/components/report/ReportView';
 import { useTheme } from '@/components/design-system/ThemeProvider';
+import { fetchGeo, fetchCwv, persistEnrichment } from '@/lib/client/enrichment';
+import { calculateGlobalScore } from '@/lib/analyzer/score';
 import type { AnalysisResult } from '@/lib/types';
 
 type FetchState =
@@ -46,6 +48,56 @@ export default function ReportPage({
           return;
         }
         setState({ status: 'ok', report: data.report });
+
+        // Conditional async enrichment — only fetches what's missing in
+        // the stored report. Once persisted via PATCH /enrich, subsequent
+        // loads of /r/<id> read the merged data straight from the DB.
+        // This rescues old reports that pre-date the enrichment columns
+        // or that crashed mid-run before geo/cwv could persist.
+        const r = data.report;
+        const cwvOk =
+          r.technical?.coreWebVitals?.mobile ||
+          r.technical?.coreWebVitals?.desktop;
+
+        if (!r.geoAnalysis) {
+          fetchGeo(r.url).then((geo) => {
+            if (cancelled || !geo) return;
+            setState((s) =>
+              s.status === 'ok'
+                ? { status: 'ok', report: { ...s.report, geoAnalysis: geo } }
+                : s,
+            );
+            persistEnrichment(id, { geoAnalysis: geo });
+          });
+        }
+
+        if (!cwvOk) {
+          fetchCwv(r.url).then((cwv) => {
+            if (cancelled || !cwv) return;
+            setState((s) => {
+              if (s.status !== 'ok') return s;
+              const newTechScore = Math.max(
+                0,
+                s.report.technical.score - cwv.cwvScorePenalty,
+              );
+              const updatedTechnical = {
+                ...s.report.technical,
+                coreWebVitals: cwv.coreWebVitals,
+                score: newTechScore,
+                issues: [...s.report.technical.issues, ...cwv.cwvIssues],
+              };
+              const newGlobal = calculateGlobalScore({
+                ...s.report,
+                technical: updatedTechnical,
+              });
+              return {
+                status: 'ok',
+                report: { ...s.report, technical: updatedTechnical, score: newGlobal },
+              };
+            });
+            persistEnrichment(id, { cwv });
+          });
+        }
       } catch {
         if (!cancelled) setState({ status: 'error' });
       }
