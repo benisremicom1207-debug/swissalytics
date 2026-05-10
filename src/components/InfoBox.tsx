@@ -41,32 +41,104 @@ export default function InfoBox({ items }: InfoBoxProps) {
   }, [open]);
 
   return (
-    <span className="relative inline-flex">
+    <span style={{ position: 'relative', display: 'inline-flex' }}>
       <button
         ref={buttonRef}
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-surface-tertiary hover:bg-border-secondary transition-colors border border-border-secondary"
         aria-label="Aide"
         aria-expanded={open}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 22,
+          height: 22,
+          background: 'var(--sa-cream-2)',
+          border: '1px solid var(--sa-rule)',
+          color: 'var(--sa-ink-3)',
+          cursor: 'pointer',
+          padding: 0,
+        }}
       >
-        <HelpCircle className="w-3.5 h-3.5 text-text-tertiary" />
+        <HelpCircle style={{ width: 12, height: 12 }} />
       </button>
       {open && (
         <div
           ref={popoverRef}
-          className="absolute top-full left-0 mt-2 z-50 w-80 max-h-96 overflow-y-auto bg-white dark:bg-zinc-900 border border-border-secondary rounded-xl shadow-lg"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: 6,
+            zIndex: 50,
+            width: 320,
+            maxHeight: 384,
+            overflowY: 'auto',
+            background: 'var(--sa-cream)',
+            border: '2px solid var(--sa-ink)',
+          }}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border-secondary bg-surface-tertiary rounded-t-xl">
-            <span className="text-sm font-semibold text-text-primary">Lexique</span>
-            <button onClick={() => setOpen(false)} className="text-text-tertiary hover:text-text-primary transition-colors">
-              <X className="w-4 h-4" />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              background: 'var(--sa-ink)',
+              color: 'var(--sa-cream)',
+            }}
+          >
+            <span
+              className="mono"
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+              }}
+            >
+              § Lexique
+            </span>
+            <button
+              onClick={() => setOpen(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--sa-cream)',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'inline-flex',
+              }}
+              aria-label="Fermer"
+            >
+              <X style={{ width: 14, height: 14 }} />
             </button>
           </div>
-          <div className="p-4 space-y-3">
+          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {items.map((item) => (
               <div key={item.term}>
-                <dt className="text-sm font-semibold text-text-primary">{item.term}</dt>
-                <dd className="text-sm text-text-tertiary mt-0.5 leading-relaxed">{item.definition}</dd>
+                <dt
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    color: 'var(--sa-ink)',
+                    marginBottom: 4,
+                  }}
+                >
+                  {item.term}
+                </dt>
+                <dd
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--sa-ink-3)',
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {item.definition}
+                </dd>
               </div>
             ))}
           </div>

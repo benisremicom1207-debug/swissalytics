@@ -2,62 +2,113 @@
 
 import { useState } from 'react';
 import type { LinksAnalysis, LinkInfo } from '@/lib/types';
-import { Link2, ExternalLink, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import IssuesList from '../IssuesList';
 import CTABanner from '../CTABanner';
 import InfoBox from '../InfoBox';
+import { SectionHeader, TabFrame } from './_v2';
 
-function LinkTable({ links, title, icon }: { links: LinkInfo[]; title: string; icon: React.ReactNode }) {
+function StatCell({ value, label, color = 'var(--sa-ink)' }: { value: number | string; label: string; color?: string }) {
+  return (
+    <div style={{ border: '1px solid var(--sa-rule)', background: 'var(--sa-cream-2)', padding: '14px 12px', textAlign: 'center' }}>
+      <div className="display tnum" style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>
+        {value}
+      </div>
+      <div className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function attrChip(label: string, color: string) {
+  return (
+    <span
+      key={label}
+      className="mono"
+      style={{
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        padding: '2px 6px',
+        border: `1px solid ${color}`,
+        color,
+        background: 'var(--sa-cream)',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function LinkTable({ links, title }: { links: LinkInfo[]; title: string }) {
   const [showAll, setShowAll] = useState(false);
   const displayed = showAll ? links : links.slice(0, 10);
 
   if (links.length === 0) return null;
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="font-semibold text-text-primary flex items-center gap-2">
-          {icon}
-          {title} ({links.length})
-        </h4>
-        {links.length > 10 && (
-          <button
-            onClick={() => setShowAll(!showAll)}
-            className="text-xs px-3 py-1 rounded-lg bg-surface-tertiary text-text-tertiary hover:text-text-primary transition-colors border border-border-secondary"
-          >
-            {showAll ? 'Réduire' : `Tout afficher (${links.length})`}
-          </button>
-        )}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+    <section>
+      <SectionHeader
+        title={`${title} (${links.length})`}
+        rightSlot={
+          links.length > 10 ? (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="mono"
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                padding: '6px 12px',
+                border: '1px solid var(--sa-ink)',
+                background: 'var(--sa-cream)',
+                color: 'var(--sa-ink)',
+                cursor: 'pointer',
+              }}
+            >
+              {showAll ? 'Réduire' : `Tout afficher (${links.length})`}
+            </button>
+          ) : null
+        }
+      />
+      <div style={{ overflowX: 'auto', border: '1px solid var(--sa-rule)', background: 'var(--sa-cream-2)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr className="text-text-quaternary border-b border-border-primary">
-              <th className="text-left pb-3 pr-4 font-medium">URL</th>
-              <th className="text-left pb-3 pr-4 font-medium">Texte d&apos;ancrage</th>
-              <th className="text-left pb-3 font-medium">Attributs</th>
+            <tr style={{ borderBottom: '2px solid var(--sa-ink)' }}>
+              <th className="mono" style={{ textAlign: 'left', padding: '10px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
+                URL
+              </th>
+              <th className="mono" style={{ textAlign: 'left', padding: '10px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
+                Texte d&apos;ancrage
+              </th>
+              <th className="mono" style={{ textAlign: 'left', padding: '10px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
+                Attributs
+              </th>
             </tr>
           </thead>
           <tbody>
             {displayed.map((link, i) => (
-              <tr key={i} className="border-b border-border-secondary hover:bg-surface-tertiary transition-colors">
-                <td className="py-2.5 pr-4 text-text-secondary max-w-[280px]">
-                  <span className="truncate block text-xs font-mono">{link.href}</span>
+              <tr key={i} style={{ borderBottom: i < displayed.length - 1 ? '1px solid var(--sa-rule)' : 'none' }}>
+                <td style={{ padding: '10px 12px', maxWidth: 280 }}>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--sa-ink-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                    {link.href}
+                  </span>
                 </td>
-                <td className="py-2.5 pr-4 max-w-[200px]">
+                <td style={{ padding: '10px 12px', maxWidth: 220 }}>
                   {link.text ? (
-                    <span className="text-text-tertiary truncate block">{link.text}</span>
+                    <span style={{ color: 'var(--sa-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {link.text}
+                    </span>
                   ) : (
-                    <em className="text-status-warning text-xs">Aucun texte</em>
+                    <em style={{ color: 'var(--sa-warn)', fontSize: 11 }}>Aucun texte</em>
                   )}
                 </td>
-                <td className="py-2.5">
-                  <div className="flex gap-1.5 flex-wrap">
-                    {link.isNofollow && <span className="text-xs px-2 py-0.5 rounded-full bg-status-error/10 text-status-error border border-status-error/20">nofollow</span>}
-                    {link.isSponsored && <span className="text-xs px-2 py-0.5 rounded-full bg-surface-tertiary text-text-tertiary border border-border-secondary">sponsored</span>}
-                    {link.isUgc && <span className="text-xs px-2 py-0.5 rounded-full bg-surface-tertiary text-text-tertiary border border-border-secondary">ugc</span>}
-                    {!link.isNofollow && !link.isSponsored && !link.isUgc && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-status-success/10 text-status-success border border-status-success/20">dofollow</span>
-                    )}
+                <td style={{ padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {link.isNofollow && attrChip('nofollow', 'var(--sa-red)')}
+                    {link.isSponsored && attrChip('sponsored', 'var(--sa-ink-4)')}
+                    {link.isUgc && attrChip('ugc', 'var(--sa-ink-4)')}
+                    {!link.isNofollow && !link.isSponsored && !link.isUgc && attrChip('dofollow', 'var(--sa-ok)')}
                   </div>
                 </td>
               </tr>
@@ -65,6 +116,42 @@ function LinkTable({ links, title, icon }: { links: LinkInfo[]; title: string; i
           </tbody>
         </table>
       </div>
+    </section>
+  );
+}
+
+function BrokenLinkRow({ href, status, error }: { href: string; status: number; error?: string }) {
+  const tone = status === 404 ? 'var(--sa-red)' : status >= 500 ? 'var(--sa-warn)' : 'var(--sa-ink-4)';
+  const display = status === 0 ? error || 'timeout' : String(status);
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '10px 14px',
+        borderBottom: '1px solid var(--sa-rule)',
+      }}
+    >
+      <span className="mono" style={{ fontSize: 11, color: 'var(--sa-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+        {href}
+      </span>
+      <span
+        className="mono"
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          padding: '3px 8px',
+          border: `1px solid ${tone}`,
+          color: tone,
+          background: 'var(--sa-cream)',
+          flexShrink: 0,
+        }}
+      >
+        {display}
+      </span>
     </div>
   );
 }
@@ -74,202 +161,149 @@ export default function LinksTab({ data }: { data: LinksAnalysis }) {
   const externalPercent = data.total > 0 ? Math.round((data.external.length / data.total) * 100) : 0;
 
   return (
-    <div className="bg-surface-secondary border border-border-primary rounded-2xl p-6 md:p-8">
-      <div className="space-y-10">
-
-        {/* 1. Stats Grid */}
-        <div>
-          <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-            <Link2 className="text-text-tertiary" />
-            Analyse des Liens
+    <TabFrame>
+      {/* §01 — Stats */}
+      <section>
+        <SectionHeader
+          num="01"
+          title="Analyse des liens"
+          info={
             <InfoBox
               items={[
-                { term: 'Liens internes', definition: 'Liens qui pointent vers d\'autres pages de votre propre site. Ils aident Google à découvrir et comprendre la structure de votre site, et transmettent de l\'autorité entre vos pages.' },
-                { term: 'Liens externes', definition: 'Liens qui pointent vers d\'autres sites web. Ils montrent à Google que vous citez des sources fiables. Visez un bon équilibre entre liens internes et externes.' },
-                { term: 'Texte d\'ancrage', definition: 'Le texte cliquable d\'un lien. Évitez les textes génériques comme « cliquez ici » ou « en savoir plus ». Utilisez des textes descriptifs qui indiquent le contenu de la page cible (ex : « notre guide SEO complet »).' },
-                { term: 'Dofollow / Nofollow', definition: 'Un lien « dofollow » (par défaut) transmet de l\'autorité SEO à la page cible. Un lien « nofollow » dit à Google de ne pas suivre ce lien. Utilisez nofollow pour les liens sponsorisés ou non fiables.' },
-                { term: 'Ancres vides', definition: 'Liens sans texte visible — souvent des images non optimisées utilisées comme liens. Ils empêchent Google de comprendre la destination du lien.' },
-                { term: 'Liens cassés', definition: 'Liens qui mènent vers des pages inexistantes (erreur 404) ou en erreur (5xx). Ils nuisent à l\'expérience utilisateur et gaspillent le budget de crawl de Google. Corrigez-les ou supprimez-les.' },
+                { term: 'Liens internes', definition: "Liens vers d'autres pages de votre site. Aident Google à découvrir la structure et transmettent l'autorité." },
+                { term: 'Liens externes', definition: "Liens vers d'autres sites. Montrent que vous citez des sources fiables." },
+                { term: "Texte d'ancrage", definition: "Texte cliquable du lien. Évitez « cliquez ici ». Préférez des textes descriptifs." },
+                { term: 'Dofollow / Nofollow', definition: 'Dofollow transmet l\'autorité SEO. Nofollow non — utilisez-le pour les liens sponsorisés ou non fiables.' },
+                { term: 'Ancres vides', definition: 'Liens sans texte visible — souvent des images non optimisées.' },
+                { term: 'Liens cassés', definition: 'Liens vers des pages 404 ou 5xx. Nuisent à l\'UX et gaspillent le budget de crawl.' },
               ]}
             />
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className="text-2xl font-bold text-text-primary mb-1">{data.total}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Total liens</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className="text-2xl font-bold text-text-primary mb-1">{data.internal.length}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Internes</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className="text-2xl font-bold text-text-primary mb-1">{data.external.length}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Externes</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className="text-2xl font-bold text-text-primary mb-1">{data.uniqueAnchors}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Ancres uniques</div>
-            </div>
-          </div>
+          }
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <StatCell value={data.total} label="Total liens" />
+          <StatCell value={data.internal.length} label="Internes" />
+          <StatCell value={data.external.length} label="Externes" />
+          <StatCell value={data.uniqueAnchors} label="Ancres uniques" />
         </div>
+      </section>
 
-        {/* 2. Anchor Text Quality (moved up — most actionable) */}
-        {(data.emptyAnchors > 0 || data.genericAnchors > 0) && (
-          <div>
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-status-warning" />
-              Qualité des textes d&apos;ancrage
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.emptyAnchors > 0 && (
-                <div className="flex items-center justify-between p-4 bg-status-error/5 border border-status-error/20 rounded-xl">
-                  <div>
-                    <div className="text-sm text-text-secondary">Ancres vides</div>
-                    <div className="text-xs text-text-quaternary">Liens sans texte ni image</div>
+      {/* §02 — Anchor quality (only when issues present) */}
+      {(data.emptyAnchors > 0 || data.genericAnchors > 0) && (
+        <section>
+          <SectionHeader num="02" title="Qualité des textes d'ancrage" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            {data.emptyAnchors > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, border: '1px solid var(--sa-red)', background: 'rgba(229, 36, 26, 0.05)' }}>
+                <div>
+                  <div style={{ fontSize: 14, color: 'var(--sa-ink)', fontWeight: 600 }}>Ancres vides</div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--sa-ink-4)', marginTop: 2 }}>
+                    Liens sans texte ni image
                   </div>
-                  <div className="text-2xl font-bold text-status-error">{data.emptyAnchors}</div>
                 </div>
-              )}
-              {data.genericAnchors > 0 && (
-                <div className="flex items-center justify-between p-4 bg-status-warning/5 border border-status-warning/20 rounded-xl">
-                  <div>
-                    <div className="text-sm text-text-secondary">Ancres génériques</div>
-                    <div className="text-xs text-text-quaternary">&quot;Cliquez ici&quot;, &quot;En savoir plus&quot;...</div>
+                <div className="display tnum" style={{ fontSize: 28, fontWeight: 800, color: 'var(--sa-red)' }}>{data.emptyAnchors}</div>
+              </div>
+            )}
+            {data.genericAnchors > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, border: '1px solid var(--sa-warn)', background: 'rgba(184, 123, 0, 0.06)' }}>
+                <div>
+                  <div style={{ fontSize: 14, color: 'var(--sa-ink)', fontWeight: 600 }}>Ancres génériques</div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--sa-ink-4)', marginTop: 2 }}>
+                    « Cliquez ici », « En savoir plus »…
                   </div>
-                  <div className="text-2xl font-bold text-status-warning">{data.genericAnchors}</div>
                 </div>
-              )}
-            </div>
+                <div className="display tnum" style={{ fontSize: 28, fontWeight: 800, color: 'var(--sa-warn)' }}>{data.genericAnchors}</div>
+              </div>
+            )}
           </div>
-        )}
+        </section>
+      )}
 
-        {/* 3. Issues */}
-        <IssuesList issues={data.issues} />
+      {/* §03 — Issues */}
+      <IssuesList issues={data.issues} />
 
-        {/* 4. Ratio bar (2-tone) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-5">
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <ArrowRightLeft className="w-4 h-4 text-text-tertiary" />
+      {/* §04 — Ratio + attributes */}
+      <section>
+        <SectionHeader num="04" title="Distribution & attributs" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+          <div style={{ border: '1px solid var(--sa-rule)', background: 'var(--sa-cream-2)', padding: 18 }}>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)', fontWeight: 700, marginBottom: 14 }}>
               Ratio interne / externe
-            </h4>
+            </div>
             {data.total > 0 ? (
               <>
-                <div className="flex h-4 rounded-full overflow-hidden mb-4">
-                  <div className="bg-accent transition-all" style={{ width: `${internalPercent}%` }} />
-                  <div className="bg-border-primary transition-all" style={{ width: `${externalPercent}%` }} />
+                <div style={{ display: 'flex', height: 14, border: '1px solid var(--sa-ink)', marginBottom: 14, overflow: 'hidden' }}>
+                  <div style={{ background: 'var(--sa-ink)', width: `${internalPercent}%` }} />
+                  <div style={{ background: 'var(--sa-cream-3)', width: `${externalPercent}%` }} />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-accent" />
-                    <span className="text-text-tertiary">Internes</span>
-                    <span className="text-text-primary font-bold">{internalPercent}%</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 10, height: 10, background: 'var(--sa-ink)' }} />
+                    <span style={{ color: 'var(--sa-ink-3)' }}>Internes</span>
+                    <span className="tnum" style={{ color: 'var(--sa-ink)', fontWeight: 700 }}>{internalPercent}%</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-border-primary" />
-                    <span className="text-text-tertiary">Externes</span>
-                    <span className="text-text-primary font-bold">{externalPercent}%</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 10, height: 10, background: 'var(--sa-cream-3)', border: '1px solid var(--sa-rule)' }} />
+                    <span style={{ color: 'var(--sa-ink-3)' }}>Externes</span>
+                    <span className="tnum" style={{ color: 'var(--sa-ink)', fontWeight: 700 }}>{externalPercent}%</span>
                   </div>
                 </div>
               </>
             ) : (
-              <p className="text-sm text-text-quaternary italic">Aucun lien détecté</p>
+              <p className="mono" style={{ fontSize: 12, color: 'var(--sa-ink-4)', fontStyle: 'italic', margin: 0 }}>Aucun lien détecté</p>
             )}
           </div>
 
-          <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-5">
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <ExternalLink className="w-4 h-4 text-text-tertiary" />
+          <div style={{ border: '1px solid var(--sa-rule)', background: 'var(--sa-cream-2)', padding: 18 }}>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)', fontWeight: 700, marginBottom: 14 }}>
               Attributs des liens
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-status-success" />
-                  <span className="text-sm text-text-tertiary">Dofollow</span>
-                </div>
-                <span className="text-sm font-bold text-status-success">{data.dofollow}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-status-error" />
-                  <span className="text-sm text-text-tertiary">Nofollow</span>
-                </div>
-                <span className="text-sm font-bold text-status-error">{data.nofollow}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-status-warning" />
-                  <span className="text-sm text-text-tertiary">Avec images</span>
-                </div>
-                <span className="text-sm font-bold text-status-warning">{data.withImages}</span>
-              </div>
             </div>
+            {[
+              ['Dofollow',  data.dofollow, 'var(--sa-ok)'],
+              ['Nofollow',  data.nofollow, 'var(--sa-red)'],
+              ['Avec images', data.withImages, 'var(--sa-warn)'],
+            ].map(([label, value, color]) => (
+              <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: 13 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 10, height: 10, background: color as string }} />
+                  <span style={{ color: 'var(--sa-ink-3)' }}>{label}</span>
+                </div>
+                <span className="tnum" style={{ color: color as string, fontWeight: 700 }}>{value as number}</span>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* 5a. Internal broken links */}
-        {data.internalBrokenLinks && data.internalBrokenLinks.length > 0 && (
-          <div>
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-status-error" />
-              Liens internes cassés ({data.internalBrokenLinks.length})
-            </h4>
-            <div className="space-y-2">
-              {data.internalBrokenLinks.map((link, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-                  <span className="text-sm text-text-secondary font-mono truncate max-w-[400px]">{link.href}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    link.status === 404 ? 'bg-status-error/10 text-status-error border border-status-error/20' :
-                    link.status >= 500 ? 'bg-status-warning/10 text-status-warning border border-status-warning/20' :
-                    'bg-surface-secondary text-text-quaternary border border-border-secondary'
-                  }`}>
-                    {link.status === 0 ? (link.error || 'timeout') : link.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {/* §05 — Internal broken */}
+      {data.internalBrokenLinks && data.internalBrokenLinks.length > 0 && (
+        <section>
+          <SectionHeader num="05" title={`Liens internes cassés (${data.internalBrokenLinks.length})`} />
+          <div style={{ border: '1px solid var(--sa-red)', background: 'var(--sa-cream-2)' }}>
+            {data.internalBrokenLinks.map((link, i) => (
+              <BrokenLinkRow key={i} href={link.href} status={link.status} error={link.error} />
+            ))}
           </div>
-        )}
+        </section>
+      )}
 
-        {/* 5b. External broken links */}
-        {data.brokenLinks.length > 0 && (
-          <div>
-            <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-status-error" />
-              Liens externes cassés ({data.brokenLinks.length})
-            </h4>
-            <div className="space-y-2">
-              {data.brokenLinks.map((link, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-                  <span className="text-sm text-text-secondary font-mono truncate max-w-[400px]">{link.href}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    link.status === 404 ? 'bg-status-error/10 text-status-error border border-status-error/20' :
-                    link.status >= 500 ? 'bg-status-warning/10 text-status-warning border border-status-warning/20' :
-                    'bg-surface-secondary text-text-quaternary border border-border-secondary'
-                  }`}>
-                    {link.status === 0 ? (link.error || 'timeout') : link.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {/* §06 — External broken */}
+      {data.brokenLinks.length > 0 && (
+        <section>
+          <SectionHeader num="06" title={`Liens externes cassés (${data.brokenLinks.length})`} />
+          <div style={{ border: '1px solid var(--sa-red)', background: 'var(--sa-cream-2)' }}>
+            {data.brokenLinks.map((link, i) => (
+              <BrokenLinkRow key={i} href={link.href} status={link.status} error={link.error} />
+            ))}
           </div>
-        )}
+        </section>
+      )}
 
-        {/* 6. Link tables (default 10 rows) */}
-        <LinkTable
-          links={data.internal}
-          title="Liens internes"
-          icon={<Link2 className="w-4 h-4 text-text-tertiary" />}
-        />
-        <LinkTable
-          links={data.external}
-          title="Liens externes"
-          icon={<ExternalLink className="w-4 h-4 text-text-tertiary" />}
-        />
+      {/* Link tables — no §number, they're details */}
+      <LinkTable links={data.internal} title="Liens internes" />
+      <LinkTable links={data.external} title="Liens externes" />
 
-        <CTABanner variant="inline" />
-      </div>
-    </div>
+      <CTABanner variant="inline" />
+    </TabFrame>
   );
 }

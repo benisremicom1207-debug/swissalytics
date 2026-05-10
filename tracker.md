@@ -136,18 +136,31 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟡 #10 (en cours de finalisation)
 
-### Phase 5 — Porter onglets en brutalist v2 ☐
-**1 PR · ~10 h · 🎨 Validation visuelle requise**
+### Phase 5 — Porter onglets en brutalist v2 ✅
+**1 PR · 2026-05-10 · 🎨 Validé visuellement**
 
-- ☐ **5.1** Ré-écrire `HeadingsTab` avec tokens `--sa-*`
-- ☐ **5.2** Ré-écrire `ImagesTab`
-- ☐ **5.3** Ré-écrire `LinksTab`
-- ☐ **5.4** Ré-écrire `TechnicalTab`
-- ☐ **5.5** Ré-écrire `MetadataTab`
-- ☐ **5.6** Ré-écrire `ReadabilityTab`
-- ☐ **5.7** Ré-écrire `IssuesList`, `CTABanner`, `InfoBox` (ou remplacer par primitives DS)
+**P5 (cœur)** :
+- ✅ **5.1** `HeadingsTab` porté (5 sections §01-§05 + IssuesList) — gauges plats, top-3 keywords avec carte principale 2px
+- ✅ **5.2** `ImagesTab` porté (4 sections + thumbnails directs sans proxy)
+- ✅ **5.3** `LinksTab` porté (6 sections + ratio 2-tons + tables hairline)
+- ✅ **5.4** `TechnicalTab` porté (13 sections, toggle CWV mobile/desktop, technologies catégorisées) + InfoBoxes ajoutées sur §10/§11/§12 (resource hints, headers HTTP, PWA)
+- ✅ **5.5** `MetadataTab` porté (7 sections, previews FB/Twitter intacts en couleurs natives, EEAT retiré au profit du panneau unifié GEO)
+- ✅ **5.6** `ReadabilityTab` porté (6 sections + Flesch gauge avec marker + distribution barres)
+- ✅ **5.7** `IssuesList` + `InfoBox` portés. `CTABanner` déjà v2 via Tailwind extensions (border-ink, bg-cream-2, bg-sa-red).
 
-**PR** : —
+**Primitives partagées** : nouveau `src/components/tabs/_v2.tsx` avec `TabFrame`, `SectionHeader`, `CheckPill`, `MonoCard` — réutilisés sur les 6 tabs.
+
+**Quality fixes bundlés (déclenchés par smoke tests P5)** :
+- ✅ **GEO chargement infini sur `/r/<id>`** : helper partagé `src/lib/client/enrichment.ts` (`fetchGeo`/`fetchCwv`/`persistEnrichment`). `/r/[id]/page.tsx` déclenche conditionnellement geo+cwv si manquants au load. Une fois persisté, plus jamais re-fetch.
+- ✅ **OG images** : `/api/image-proxy?url=…` (route fantôme jamais créée) remplacé par `<img src={...}>` direct dans MetadataTab + ImagesTab (les og:image sont publiques par design).
+- ✅ **Magento faux positif** : regex `mage-` (matchait classes Vue obfusquées de sunrise) remplacée par marqueurs spécifiques (data-mage-init, Mage_Catalog, /static/version/frontend/Magento, generator meta).
+- ✅ **Tech stack catégorisé** : nouveau `src/lib/analyzer/tech-categories.ts` qui regroupe les ~30 technologies détectées en 5 buckets (framework / library / analytics / embed / other). Affiché dans TechnicalTab §05 avec dot couleur par bucket.
+- ✅ **EEAT dédupliqué** : panneau unique enrichi dans GeoTabContent §09 (10 signaux groupés en 5 catégories : Identité · Récence · Contact · Légal · Preuves sociales). Retiré de MetadataTab.
+- ✅ **GEO panel reorder** : Indexation §06 → **Lighthouse §07** (remonté) → Schema §08 → E-E-A-T §09 (plus actionnable visuellement).
+
+**Tests** : +47 nouveaux tests (12 enrichment + 7 technical-cms + 28 tech-categories). Total : **255/255 ✅**, tsc + lint clean.
+
+**PR** : 🟡 #11 (en cours de finalisation)
 
 ### Phase 7 — UX polish ☐
 **1 PR · ~5 h · 🎨 Validation visuelle requise**

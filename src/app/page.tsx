@@ -3,29 +3,13 @@
 import { useState, useRef } from 'react';
 import type { AnalysisResult } from '@/lib/types';
 import { calculateGlobalScore } from '@/lib/analyzer/score';
+import { fetchGeo, fetchCwv, persistEnrichment } from '@/lib/client/enrichment';
 import AnalyzerHero from '@/components/AnalyzerHero';
 import AnalyzerLoading from '@/components/AnalyzerLoading';
 import ReportView from '@/components/report/ReportView';
 import Shell from '@/components/design-system/Shell';
 import { useTheme } from '@/components/design-system/ThemeProvider';
 import { Pixel } from '@/components/design-system/primitives';
-
-/**
- * Fire-and-forget PATCH to persist async enrichment (geo + cwv) so /r/<id>
- * and /s/<slug> can rehydrate the same enriched view later. Failures are
- * silently swallowed — enrichment is best-effort, the live view already has
- * the data in React state.
- */
-function persistEnrichment(
-  reportId: string,
-  patch: { geoAnalysis?: unknown; cwv?: unknown },
-) {
-  fetch(`/api/report/${reportId}/enrich`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  }).catch(() => {});
-}
 
 function isSelfAnalysis(input: string): boolean {
   const normalized = input
@@ -113,27 +97,15 @@ export default function HomePage() {
       setDegraded(Boolean(data.degraded));
       setCwvLoading(true);
 
-      fetch('/api/geo-analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: validatedUrl }),
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((geoData) => {
-          if (!geoData) return;
-          setResult((prev) => (prev ? { ...prev, geoAnalysis: geoData } : prev));
-          if (id) persistEnrichment(id, { geoAnalysis: geoData });
-        })
-        .catch(() => {});
+      fetchGeo(validatedUrl).then((geoData) => {
+        if (!geoData) return;
+        setResult((prev) => (prev ? { ...prev, geoAnalysis: geoData } : prev));
+        if (id) persistEnrichment(id, { geoAnalysis: geoData });
+      });
 
-      fetch('/api/analyze/cwv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: validatedUrl }),
-      })
-        .then((res) => (res.ok ? res.json() : null))
+      fetchCwv(validatedUrl)
         .then((cwvData) => {
-          if (!cwvData?.coreWebVitals || (!cwvData.coreWebVitals.mobile && !cwvData.coreWebVitals.desktop)) return;
+          if (!cwvData) return;
           setResult((prev) => {
             if (!prev) return prev;
             const newTechScore = Math.max(0, prev.technical.score - cwvData.cwvScorePenalty);
@@ -148,7 +120,6 @@ export default function HomePage() {
           });
           if (id) persistEnrichment(id, { cwv: cwvData });
         })
-        .catch(() => {})
         .finally(() => setCwvLoading(false));
 
       setTimeout(() => {

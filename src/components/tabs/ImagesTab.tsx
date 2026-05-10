@@ -5,6 +5,33 @@ import type { ImagesAnalysis } from '@/lib/types';
 import IssuesList from '../IssuesList';
 import CTABanner from '../CTABanner';
 import InfoBox from '../InfoBox';
+import { SectionHeader, TabFrame } from './_v2';
+
+function statColor(v: number, good: number, mid: number): string {
+  if (v >= good) return 'var(--sa-ok)';
+  if (v >= mid) return 'var(--sa-warn)';
+  return 'var(--sa-red)';
+}
+
+function StatCell({ value, label, color = 'var(--sa-ink)' }: { value: number | string; label: string; color?: string }) {
+  return (
+    <div
+      style={{
+        border: '1px solid var(--sa-rule)',
+        background: 'var(--sa-cream-2)',
+        padding: '14px 12px',
+        textAlign: 'center',
+      }}
+    >
+      <div className="display tnum" style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>
+        {value}
+      </div>
+      <div className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)' }}>
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export default function ImagesTab({ data }: { data: ImagesAnalysis }) {
   const [showAllImages, setShowAllImages] = useState(false);
@@ -20,133 +47,229 @@ export default function ImagesTab({ data }: { data: ImagesAnalysis }) {
   const displayedImages = showAllImages ? data.images : data.images.slice(0, 15);
 
   return (
-    <div className="bg-surface-secondary border border-border-primary rounded-2xl p-6 md:p-8">
-      <div className="space-y-8">
-
-        {/* 1. Stats grid */}
-        <div>
-          <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-            Statistiques des Images
+    <TabFrame>
+      {/* §01 — Stats */}
+      <section>
+        <SectionHeader
+          num="01"
+          title="Statistiques des images"
+          info={
             <InfoBox
               items={[
-                { term: 'Attribut Alt (texte alternatif)', definition: 'Un texte descriptif associé à chaque image. Il est lu par les moteurs de recherche et les lecteurs d\'écran pour les personnes malvoyantes. Décrivez le contenu de l\'image en quelques mots (ex : « Logo Swissalytics bleu sur fond blanc »).' },
-                { term: 'Lazy Loading', definition: 'Technique qui retarde le chargement des images hors de l\'écran. Les images ne se chargent que lorsque l\'utilisateur fait défiler la page, ce qui accélère l\'affichage initial.' },
-                { term: 'Format WebP / AVIF', definition: 'Formats d\'image modernes qui offrent une meilleure compression que JPEG et PNG, réduisant le poids de 25 à 50 % sans perte de qualité visible. Google recommande leur utilisation.' },
-                { term: 'Dimensions explicites', definition: 'Spécifier la largeur et la hauteur dans le HTML évite les « sauts » de mise en page pendant le chargement (appelé CLS — Cumulative Layout Shift).' },
-                { term: 'Srcset (images responsives)', definition: 'L\'attribut srcset permet au navigateur de choisir la meilleure taille d\'image selon l\'écran de l\'utilisateur. Il réduit le temps de chargement sur mobile en servant des images plus petites.' },
+                { term: 'Attribut Alt (texte alternatif)', definition: "Un texte descriptif associé à chaque image. Lu par les moteurs et lecteurs d'écran. Décrivez en quelques mots." },
+                { term: 'Lazy Loading', definition: "Retarde le chargement des images hors écran. Les images se chargent quand l'utilisateur scrolle." },
+                { term: 'Format WebP / AVIF', definition: 'Formats modernes (compression -25 à -50% vs JPEG/PNG sans perte visible). Recommandés par Google.' },
+                { term: 'Dimensions explicites', definition: 'width + height évitent les sauts de mise en page (CLS).' },
+                { term: 'Srcset (responsive)', definition: 'Permet au navigateur de choisir la meilleure taille selon l\'écran. Réduit le temps mobile.' },
               ]}
             />
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className="text-2xl font-bold text-text-primary mb-1">{data.total}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Total</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className="text-2xl font-bold text-status-success mb-1">{data.withAlt}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Avec alt</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className={`text-2xl font-bold mb-1 ${data.withoutAlt > 0 ? 'text-status-error' : 'text-text-primary'}`}>{data.withoutAlt}</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Alt manquant</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className={`text-2xl font-bold mb-1 ${altPercent >= 80 ? 'text-status-success' : altPercent >= 50 ? 'text-status-warning' : 'text-status-error'}`}>{altPercent}%</div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Couverture</div>
-            </div>
-            <div className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-              <div className={`text-2xl font-bold mb-1 ${data.withoutResponsive === 0 ? 'text-status-success' : data.total > 3 ? 'text-status-warning' : 'text-text-primary'}`}>
-                {data.total - data.withoutResponsive}
-              </div>
-              <div className="text-xs text-text-quaternary uppercase tracking-wider">Responsive (srcset)</div>
-            </div>
-          </div>
+          }
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <StatCell value={data.total} label="Total" />
+          <StatCell value={data.withAlt} label="Avec alt" color={data.withAlt > 0 ? 'var(--sa-ok)' : 'var(--sa-ink)'} />
+          <StatCell
+            value={data.withoutAlt}
+            label="Alt manquant"
+            color={data.withoutAlt > 0 ? 'var(--sa-red)' : 'var(--sa-ink)'}
+          />
+          <StatCell value={`${altPercent}%`} label="Couverture" color={statColor(altPercent, 80, 50)} />
+          <StatCell
+            value={data.total - data.withoutResponsive}
+            label="Responsive (srcset)"
+            color={data.total > 0 && data.withoutResponsive === 0 ? 'var(--sa-ok)' : data.total > 3 ? 'var(--sa-warn)' : 'var(--sa-ink)'}
+          />
         </div>
+      </section>
 
-        {/* 2. Issues (moved up) */}
-        <IssuesList issues={data.issues} />
+      {/* §02 — Issues */}
+      <IssuesList issues={data.issues} />
 
-        {/* 3. Format distribution */}
-        {Object.keys(formatCounts).length > 0 && (
-          <div>
-            <h4 className="font-semibold text-text-primary mb-4">Formats d&apos;image</h4>
-            <div className="flex gap-3 flex-wrap">
-              {Object.entries(formatCounts)
-                .sort((a, b) => b[1] - a[1])
-                .map(([format, count]) => (
-                  <div key={format} className="px-4 py-2 bg-surface-tertiary border border-border-secondary rounded-lg flex items-center gap-2">
-                    <span className="text-sm font-medium text-text-primary">{format}</span>
-                    <span className="text-sm text-text-quaternary">{count}</span>
-                  </div>
-                ))}
-            </div>
+      {/* §03 — Format distribution */}
+      {Object.keys(formatCounts).length > 0 && (
+        <section>
+          <SectionHeader num="03" title="Formats d'image" />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {Object.entries(formatCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([format, count]) => (
+                <div
+                  key={format}
+                  className="mono"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 14px',
+                    border: '1px solid var(--sa-rule)',
+                    background: 'var(--sa-cream-2)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    color: 'var(--sa-ink)',
+                  }}
+                >
+                  <span>{format}</span>
+                  <span className="tnum" style={{ color: 'var(--sa-ink-4)', fontWeight: 600 }}>×{count}</span>
+                </div>
+              ))}
           </div>
-        )}
+        </section>
+      )}
 
-        {/* 4. Image list (limit 15, collapsible) */}
-        {data.images.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-text-primary">Détail des images ({data.images.length})</h4>
-              {data.images.length > 15 && (
+      {/* §04 — Image list */}
+      {data.images.length > 0 && (
+        <section>
+          <SectionHeader
+            num="04"
+            title={`Détail des images (${data.images.length})`}
+            rightSlot={
+              data.images.length > 15 ? (
                 <button
                   onClick={() => setShowAllImages(!showAllImages)}
-                  className="text-xs px-3 py-1 rounded-lg bg-surface-tertiary text-text-tertiary hover:text-text-primary transition-colors border border-border-secondary"
+                  className="mono"
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    padding: '6px 12px',
+                    border: '1px solid var(--sa-ink)',
+                    background: 'var(--sa-cream)',
+                    color: 'var(--sa-ink)',
+                    cursor: 'pointer',
+                  }}
                 >
                   {showAllImages ? 'Réduire' : `Tout afficher (${data.images.length})`}
                 </button>
-              )}
-            </div>
-            <div className="space-y-3">
-              {displayedImages.map((img, i) => (
-                <div key={i} className="flex items-center gap-4 p-3 bg-surface-tertiary border border-border-secondary rounded-xl">
-                  <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-surface-secondary border border-border-secondary flex items-center justify-center">
-                    {img.src && !failedImages.has(i) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/api/image-proxy?url=${encodeURIComponent(img.src)}`}
-                        alt={img.alt || ''}
-                        className="w-full h-full object-cover"
-                        onError={() => setFailedImages(prev => new Set(prev).add(i))}
-                      />
-                    ) : (
-                      <span className="text-xs text-text-quaternary">{img.src ? img.format.toUpperCase() : 'N/A'}</span>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-surface-secondary text-text-tertiary">{img.format.toUpperCase()}</span>
-                      {img.hasAlt && img.alt ? (
-                        <span className="text-xs text-status-success font-medium">ALT</span>
-                      ) : (
-                        <span className="text-xs text-status-error font-medium">ALT MANQUANT</span>
-                      )}
-                      {img.isLazy && (
-                        <span className="text-xs text-text-tertiary font-medium">LAZY</span>
-                      )}
-                    </div>
-                    {img.alt && (
-                      <p className="text-sm text-text-secondary truncate">{img.alt}</p>
-                    )}
-                    <p className="text-xs text-text-quaternary truncate">{img.src}</p>
-                  </div>
-
-                  <div className="flex-shrink-0 text-right">
-                    {img.width && img.height ? (
-                      <span className="text-xs text-text-quaternary">{img.width} x {img.height}</span>
-                    ) : (
-                      <span className="text-xs text-text-quaternary">—</span>
-                    )}
-                  </div>
+              ) : null
+            }
+          />
+          <div style={{ border: '1px solid var(--sa-rule)', background: 'var(--sa-cream-2)' }}>
+            {displayedImages.map((img, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '64px 1fr auto',
+                  gap: 14,
+                  padding: '12px 16px',
+                  borderBottom: i < displayedImages.length - 1 ? '1px solid var(--sa-rule)' : 'none',
+                  alignItems: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    background: 'var(--sa-cream-3)',
+                    border: '1px solid var(--sa-rule)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                  }}
+                >
+                  {img.src && !failedImages.has(i) ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={img.src}
+                      alt={img.alt || ''}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={() => setFailedImages((prev) => new Set(prev).add(i))}
+                    />
+                  ) : (
+                    <span className="mono" style={{ fontSize: 9, color: 'var(--sa-ink-4)', fontWeight: 700 }}>
+                      {img.src ? img.format.toUpperCase() : 'N/A'}
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        <CTABanner variant="inline" />
-      </div>
-    </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span
+                      className="mono"
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        padding: '2px 6px',
+                        border: '1px solid var(--sa-rule)',
+                        background: 'var(--sa-cream)',
+                        color: 'var(--sa-ink-3)',
+                      }}
+                    >
+                      {img.format.toUpperCase()}
+                    </span>
+                    {img.hasAlt && img.alt ? (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          padding: '2px 6px',
+                          border: '1px solid var(--sa-ok)',
+                          color: 'var(--sa-ok)',
+                          background: 'rgba(47, 107, 63, 0.06)',
+                        }}
+                      >
+                        ALT
+                      </span>
+                    ) : (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          padding: '2px 6px',
+                          border: '1px solid var(--sa-red)',
+                          color: 'var(--sa-red)',
+                          background: 'rgba(229, 36, 26, 0.05)',
+                        }}
+                      >
+                        ALT MANQUANT
+                      </span>
+                    )}
+                    {img.isLazy && (
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          padding: '2px 6px',
+                          border: '1px solid var(--sa-rule)',
+                          color: 'var(--sa-ink-4)',
+                          background: 'var(--sa-cream)',
+                        }}
+                      >
+                        LAZY
+                      </span>
+                    )}
+                  </div>
+                  {img.alt && (
+                    <p style={{ fontSize: 13, color: 'var(--sa-ink-2)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {img.alt}
+                    </p>
+                  )}
+                  <p style={{ fontSize: 11, color: 'var(--sa-ink-4)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--sa-font-mono)' }}>
+                    {img.src}
+                  </p>
+                </div>
+
+                <div className="mono tnum" style={{ fontSize: 11, color: 'var(--sa-ink-4)', textAlign: 'right', flexShrink: 0 }}>
+                  {img.width && img.height ? `${img.width}×${img.height}` : '—'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <CTABanner variant="inline" />
+    </TabFrame>
   );
 }
