@@ -105,8 +105,13 @@ export async function analyzeSchemaOrg(url: string): Promise<SchemaOrgResult> {
     };
     
   } catch (error) {
-    console.error('[Schema.org] Erreur:', error);
-    
+    // Log clean one-liner instead of full stack trace — Schema.org
+    // failures are routine (404 robots.txt, 403 from anti-bot sites,
+    // timeouts on slow CMSs) and historically spammed 7-8 stack frames
+    // per failure into prod logs, drowning out signal.
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(`[Schema.org] skip (${msg.slice(0, 80)})`);
+
     // Fallback données simulées
     return simulateSchemaData();
   }
@@ -149,7 +154,10 @@ function extractSchemas($: ReturnType<typeof cheerio.load>): Schema[] {
         }
       }
     } catch (error) {
-      console.error('[Schema.org] Erreur parsing JSON-LD:', error);
+      // Sites routinely have malformed JSON-LD (trailing commas,
+      // unescaped quotes). One-line warn is enough — no stack trace.
+      const msg = error instanceof Error ? error.message : String(error);
+      console.warn(`[Schema.org] invalid JSON-LD: ${msg.slice(0, 80)}`);
     }
   });
 
