@@ -137,19 +137,10 @@ export default function ReportView({
   // Details section
   const [section, setSection] = useState<DetailsSectionKey>('headings');
 
-  // Verdict
+  // Verdict — `verdictText` removed in P7.2 (was a redundant serif
+  // italic line between MetricStrip and tabs). The state badge below
+  // is still used inside the scorecard chip.
   const verdict = verdictOf(report.score);
-  const verdictText = isFr
-    ? verdict === 'clean'
-      ? "Site excellent — prêt pour Google et l'IA."
-      : verdict === 'mixed'
-      ? 'Site correct, quelques ajustements à faire.'
-      : 'Site à corriger — plusieurs problèmes critiques.'
-    : verdict === 'clean'
-    ? 'Excellent site — ready for Google and AI.'
-    : verdict === 'mixed'
-    ? 'Decent site, a few fixes to do.'
-    : 'Site needs work — several critical issues.';
 
   const verdictState = isFr
     ? verdict === 'clean'
@@ -286,23 +277,8 @@ export default function ReportView({
         </div>
       </div>
 
-      {/* 2. Verdict line */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--sa-rule)' }}>
-        <p
-          className="serif"
-          style={{
-            fontFamily: 'var(--sa-font-serif)',
-            fontStyle: 'italic',
-            fontSize: 'clamp(18px, 2vw, 24px)',
-            lineHeight: 1.4,
-            margin: 0,
-            color: 'var(--sa-ink)',
-            fontWeight: 500,
-          }}
-        >
-          &laquo; {verdictText} &raquo;
-        </p>
-      </div>
+      {/* P7.2 — Verdict line removed (redundant with the score badge
+          + scorecards already shown in MetricStrip just above). */}
 
       {/* 3. Tab bar */}
       <div
