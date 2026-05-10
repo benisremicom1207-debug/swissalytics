@@ -65,6 +65,38 @@ describe('mergeEnrichment', () => {
     expect(merged.technical.issues).toHaveLength(1);
   });
 
+  it('attaches top-level keywordSuggestions (P18.B)', () => {
+    const ks = { suggestions: [{ keyword: 'k', rationale: 'r' }], model: 'gemini-2.5-flash' };
+    // Cast through unknown because StoredReport.keywordSuggestions is the
+    // strict KeywordSuggestionsResult type and we want a minimal stub here.
+    const stored = makeStored({ keywordSuggestions: ks as unknown as StoredReport['keywordSuggestions'] });
+    const merged = mergeEnrichment(stored);
+    expect(merged.keywordSuggestions).toEqual(ks);
+  });
+
+  it('hoists legacy geoAnalysis.keywordSuggestions to top-level for backwards compat (P18.B)', () => {
+    // Legacy reports stored before P18 had keywordSuggestions INSIDE geo_analysis.
+    // mergeEnrichment must surface them at the top so the new UI keeps
+    // displaying them after the column split.
+    const legacyKs = { suggestions: [{ keyword: 'old', rationale: 'r' }], model: 'gpt-4o-mini' };
+    const geo = { geo: { score: 41 }, keywordSuggestions: legacyKs } as unknown as GeoAnalysisResult;
+    const stored = makeStored({ geoAnalysis: geo });
+    const merged = mergeEnrichment(stored);
+    expect(merged.keywordSuggestions).toEqual(legacyKs);
+  });
+
+  it('top-level keywordSuggestions wins over legacy nested one when both present', () => {
+    const legacyKs = { suggestions: [{ keyword: 'old', rationale: 'r' }], model: 'gpt-4o-mini' };
+    const newKs    = { suggestions: [{ keyword: 'new', rationale: 'r' }], model: 'gemini-2.5-flash' };
+    const geo = { geo: { score: 41 }, keywordSuggestions: legacyKs } as unknown as GeoAnalysisResult;
+    const stored = makeStored({
+      geoAnalysis: geo,
+      keywordSuggestions: newKs as unknown as StoredReport['keywordSuggestions'],
+    });
+    const merged = mergeEnrichment(stored);
+    expect(merged.keywordSuggestions).toEqual(newKs);
+  });
+
   it('skips CWV merge when coreWebVitals payload is null', () => {
     const cwv: CwvEnrichment = {
       coreWebVitals: null,

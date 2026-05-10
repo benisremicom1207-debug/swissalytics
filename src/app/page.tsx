@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import type { AnalysisResult } from '@/lib/types';
 import { calculateGlobalScore } from '@/lib/analyzer/score';
-import { fetchGeo, fetchCwv, persistEnrichment, buildPageContext } from '@/lib/client/enrichment';
+import { fetchGeo, fetchCwv, fetchKeywordSuggestions, persistEnrichment, buildPageContext } from '@/lib/client/enrichment';
 import AnalyzerHero from '@/components/AnalyzerHero';
 import AnalyzerLoading from '@/components/AnalyzerLoading';
 import ReportView from '@/components/report/ReportView';
@@ -31,6 +31,10 @@ export default function HomePage() {
   const [degraded, setDegraded] = useState<boolean>(false);
   const [error, setError] = useState('');
   const [cwvLoading, setCwvLoading] = useState(false);
+  // P18.B — separate loading state for /api/keyword-suggestions so the
+  // HeadingsTab skeleton can show "Suggestions IA en cours…" while the
+  // request is in flight, instead of nothing.
+  const [keywordSuggestionsLoading, setKeywordSuggestionsLoading] = useState(false);
   const [easterEgg, setEasterEgg] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -93,6 +97,17 @@ export default function HomePage() {
         setResult((prev) => (prev ? { ...prev, geoAnalysis: geoData } : prev));
         if (id) persistEnrichment(id, { geoAnalysis: geoData });
       });
+
+      // P18.B — keyword suggestions in their own request, runs in parallel
+      // with /api/geo-analyze so they appear in 5-10s instead of 27s.
+      setKeywordSuggestionsLoading(true);
+      fetchKeywordSuggestions(validatedUrl, buildPageContext(report))
+        .then((ks) => {
+          if (!ks) return;
+          setResult((prev) => (prev ? { ...prev, keywordSuggestions: ks } : prev));
+          if (id) persistEnrichment(id, { keywordSuggestions: ks });
+        })
+        .finally(() => setKeywordSuggestionsLoading(false));
 
       fetchCwv(validatedUrl)
         .then((cwvData) => {
@@ -183,6 +198,7 @@ export default function HomePage() {
             report={result}
             reportId={reportId ?? undefined}
             cwvLoading={cwvLoading}
+            keywordSuggestionsLoading={keywordSuggestionsLoading}
             degraded={degraded}
           />
         </section>

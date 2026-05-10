@@ -37,6 +37,7 @@ interface ReportRow {
   referrer: string | null;
   geo_analysis: unknown;
   cwv: unknown;
+  keyword_suggestions: unknown;
 }
 
 export function storedToRow(r: StoredReport): ReportRow {
@@ -58,6 +59,7 @@ export function storedToRow(r: StoredReport): ReportRow {
     referrer: r.referrer ?? null,
     geo_analysis: r.geoAnalysis ?? null,
     cwv: r.cwv ?? null,
+    keyword_suggestions: r.keywordSuggestions ?? null,
   };
 }
 
@@ -80,6 +82,7 @@ export function rowToStored(row: ReportRow): StoredReport {
     referrer: row.referrer,
     geoAnalysis: (row.geo_analysis ?? null) as GeoAnalysisResult | null,
     cwv: (row.cwv ?? null) as CwvEnrichment | null,
+    keywordSuggestions: (row.keyword_suggestions ?? null) as StoredReport['keywordSuggestions'],
   };
 }
 
@@ -187,9 +190,14 @@ export class SupabaseReportsRepository implements ReportsRepository {
   }
 
   async enrich(id: string, patch: EnrichPatch): Promise<StoredReport | null> {
-    const update: { geo_analysis?: GeoAnalysisResult; cwv?: CwvEnrichment } = {};
+    const update: {
+      geo_analysis?: GeoAnalysisResult;
+      cwv?: CwvEnrichment;
+      keyword_suggestions?: NonNullable<StoredReport['keywordSuggestions']>;
+    } = {};
     if (patch.geoAnalysis !== undefined) update.geo_analysis = patch.geoAnalysis;
     if (patch.cwv !== undefined) update.cwv = patch.cwv;
+    if (patch.keywordSuggestions !== undefined) update.keyword_suggestions = patch.keywordSuggestions;
     if (Object.keys(update).length === 0) {
       // No-op patch: just fetch the row instead of issuing an empty UPDATE.
       return this.getById(id);

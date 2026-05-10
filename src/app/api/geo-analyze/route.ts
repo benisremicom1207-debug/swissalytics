@@ -18,8 +18,6 @@ import {
   isAnyDegraded,
   type DegradedFlags,
 } from '@/lib/analyzers/resilience';
-import { suggestSeoKeywords } from '@/lib/analyzers/keyword-suggestions';
-import type { SchemaKeywords } from '@/lib/analyzer/schema-keywords';
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
 
 /**
@@ -72,17 +70,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const rawUrl = typeof body?.url === 'string' ? body.url.trim() : '';
-    // P14.D — frontend optionally passes pageContext (title/meta/h1/lang/schemaKeywords)
-    // so the keyword-suggestions LLM call can use the page's real signals
-    // without re-fetching the HTML. When absent, suggestions are skipped.
-    const pageContext: {
-      lang?: string;
-      title?: string;
-      metaDescription?: string;
-      h1?: string;
-      schemaKeywords?: SchemaKeywords;
-    } | undefined = body?.pageContext ?? undefined;
-
+    // P18.B — pageContext was previously consumed here for keyword
+    // suggestions ; that responsibility moved to /api/keyword-suggestions
+    // so this endpoint is no longer LLM-dominated by the slowest analyzer.
     if (!rawUrl) {
       return NextResponse.json({ error: 'URL requise' }, { status: 400, headers: CORS });
     }
@@ -115,10 +105,6 @@ export async function POST(request: NextRequest) {
       withTimeout(analyzeGEOIndexation(validatedUrl),   TIMEOUTS.geo,        'geo'),
       withTimeout(analyzeSchemaOrgMultiPage(validatedUrl), TIMEOUTS.schema,  'schema'),
       withTimeout(analyzeEEAT(validatedUrl),            TIMEOUTS.eeat,       'eeat'),
-      // P14.D — keyword suggestions (only when pageContext was passed)
-      pageContext
-        ? withTimeout(suggestSeoKeywords({ url: validatedUrl, lang: pageContext.lang ?? 'fr', ...pageContext }), 12_000, 'keywordSuggestions')
-        : Promise.resolve(null),
     ]);
 
     const degraded: DegradedFlags = { lighthouse: false, seo: false, geo: false, schema: false, eeat: false };
@@ -132,10 +118,6 @@ export async function POST(request: NextRequest) {
     const geo    = resolveOrFallback(settled[2], geoIndexationFallback, (r) => { degraded.geo    = true; degradedReasons.geo = r; });
     const schema = resolveOrFallback(settled[3], schemaOrgFallback,     (r) => { degraded.schema = true; degradedReasons.schema = r; });
     const eeat   = resolveOrFallback(settled[4], eeatFallback,          (r) => { degraded.eeat   = true; degradedReasons.eeat = r; });
-    // P14.D — silent fallback (no degraded flag): suggestions are
-    // optional value-add. If the LLM call failed, the field is just
-    // omitted from the response.
-    const keywordSuggestions = settled[5].status === 'fulfilled' ? settled[5].value : null;
 
     if (isAnyDegraded(degraded)) {
       console.warn('[/api/geo-analyze] Degraded:',
@@ -202,7 +184,6 @@ export async function POST(request: NextRequest) {
       projection: composite.projection,
       warnings: warnings.length > 0 ? warnings : undefined,
       degraded: isAnyDegraded(degraded) ? degraded : undefined,
-      keywordSuggestions: keywordSuggestions ?? undefined,
     };
 
     return NextResponse.json(result, { headers: CORS });

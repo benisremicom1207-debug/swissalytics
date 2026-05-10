@@ -22,6 +22,8 @@ interface ReportViewProps {
   reportId?: string;
   readOnly?: boolean;
   cwvLoading?: boolean;
+  /** P18.B — surface "Suggestions IA en cours…" skeleton in HeadingsTab. */
+  keywordSuggestionsLoading?: boolean;
   degraded?: boolean;
 }
 
@@ -81,6 +83,7 @@ export default function ReportView({
   reportId,
   readOnly,
   cwvLoading,
+  keywordSuggestionsLoading,
   degraded = false,
 }: ReportViewProps) {
   const { lang } = useTheme();
@@ -383,6 +386,7 @@ export default function ReportView({
           <DetailsContent
             report={report}
             cwvLoading={cwvLoading}
+            keywordSuggestionsLoading={keywordSuggestionsLoading}
             section={section}
             setSection={setSection}
             sectionDefs={sectionDefs}

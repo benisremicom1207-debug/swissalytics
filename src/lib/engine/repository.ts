@@ -8,11 +8,14 @@
 
 import type { CwvEnrichment, Lang, ReportSummary, StoredReport } from './types';
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
+import type { KeywordSuggestionsResult } from '@/lib/analyzers/keyword-suggestions';
 
 /** Patch payload for enrich() — at least one field must be present. */
 export interface EnrichPatch {
   geoAnalysis?: GeoAnalysisResult;
   cwv?: CwvEnrichment;
+  /** P18.B — keyword suggestions persisted independently from geoAnalysis. */
+  keywordSuggestions?: KeywordSuggestionsResult;
 }
 
 export interface ReportsRepository {

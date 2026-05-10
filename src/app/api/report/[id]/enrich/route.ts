@@ -3,11 +3,12 @@ import { getReportsRepo } from '@/lib/engine/repositoryInstance';
 import type { EnrichPatch } from '@/lib/engine/repository';
 import type { CwvEnrichment } from '@/lib/engine/types';
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
+import type { KeywordSuggestionsResult } from '@/lib/analyzers/keyword-suggestions';
 
 /**
  * PATCH /api/report/[id]/enrich  → persist async enrichment payloads.
  *
- * Body: { geoAnalysis?: GeoAnalysisResult, cwv?: CwvEnrichment }
+ * Body: { geoAnalysis?: GeoAnalysisResult, cwv?: CwvEnrichment, keywordSuggestions?: KeywordSuggestionsResult }
  *
  * Called fire-and-forget from the homepage after /api/geo-analyze and
  * /api/analyze/cwv resolve, so /r/<id> and /s/<slug> can rehydrate the
@@ -44,10 +45,16 @@ export async function PATCH(
     }
     patch.cwv = body.cwv as unknown as CwvEnrichment;
   }
+  if ('keywordSuggestions' in body) {
+    if (!isObject(body.keywordSuggestions)) {
+      return NextResponse.json({ error: 'keywordSuggestions must be an object' }, { status: 400 });
+    }
+    patch.keywordSuggestions = body.keywordSuggestions as unknown as KeywordSuggestionsResult;
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json(
-      { error: 'At least one of { geoAnalysis, cwv } is required' },
+      { error: 'At least one of { geoAnalysis, cwv, keywordSuggestions } is required' },
       { status: 400 },
     );
   }

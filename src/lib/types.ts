@@ -112,6 +112,13 @@ export interface AnalysisResult {
   spa?: SpaDetection;
   /** Decorated async by `/api/geo-analyze` after the main /analyze response. */
   geoAnalysis?: GeoAnalysisResult;
+  /**
+   * Decorated async by `/api/keyword-suggestions` (P18.B). Lives at the
+   * top-level — not nested under geoAnalysis — so it can arrive
+   * independently of the slower geo block (Lighthouse 35s + GEO 25s)
+   * and trigger its own UI loader.
+   */
+  keywordSuggestions?: import('./analyzers/keyword-suggestions').KeywordSuggestionsResult;
 }
 
 export interface HeadingsAnalysis {

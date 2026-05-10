@@ -14,6 +14,7 @@
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
 import type { CwvMetrics, Issue, AnalysisResult } from '@/lib/types';
 import type { SchemaKeywords } from '@/lib/analyzer/schema-keywords';
+import type { KeywordSuggestionsResult } from '@/lib/analyzers/keyword-suggestions';
 
 /**
  * Page context passed to /api/geo-analyze so the keyword-suggestions
@@ -52,7 +53,7 @@ export interface CwvEnrichmentData {
  */
 export function persistEnrichment(
   reportId: string,
-  patch: { geoAnalysis?: unknown; cwv?: unknown },
+  patch: { geoAnalysis?: unknown; cwv?: unknown; keywordSuggestions?: unknown },
 ): void {
   fetch(`/api/report/${reportId}/enrich`, {
     method: 'PATCH',
@@ -77,6 +78,30 @@ export async function fetchGeo(
     });
     if (!res.ok) return null;
     return (await res.json()) as GeoAnalysisResult;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * P18.B — fetch /api/keyword-suggestions independently from /api/geo-analyze.
+ * Returns null on any failure (rate-limited, HTTP error, no result).
+ * The caller decides whether to surface the loader, the result, or the
+ * empty state.
+ */
+export async function fetchKeywordSuggestions(
+  url: string,
+  pageContext: PageContext,
+): Promise<KeywordSuggestionsResult | null> {
+  try {
+    const res = await fetch('/api/keyword-suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, pageContext }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { keywordSuggestions: KeywordSuggestionsResult | null };
+    return data.keywordSuggestions ?? null;
   } catch {
     return null;
   }
