@@ -4,17 +4,26 @@ import { useTheme } from '@/components/design-system/ThemeProvider';
 import { COPY } from '@/lib/i18n/copy';
 import { RedPing } from '@/components/design-system/primitives';
 
-interface AnalyzerLoadingProps {
-  step: number;
-}
-
 const GLYPHS = ['◧', '◨', '◫', '◩', '◪'];
 
-export default function AnalyzerLoading({ step }: AnalyzerLoadingProps) {
+/**
+ * P7.1 — Honest indeterminate loader.
+ *
+ * The previous version simulated 5 sequential "steps" via a 3s timer
+ * (`stepInterval` in page.tsx) — fake progress that lied about what
+ * the analyzer was doing. In reality, all 5 sub-analyses run in
+ * parallel inside `analyzePage`, completing together when the HTTP
+ * fetch + cheerio parse + 5 module calls all settle.
+ *
+ * New design:
+ *   - All 5 categories rendered as "running" simultaneously
+ *   - Indeterminate scanner bar (CSS keyframe, not value-driven)
+ *   - No fake percent counter
+ *   - Same brutalist v2 visual language (frame, mono captions, ink-b)
+ */
+export default function AnalyzerLoading() {
   const { lang } = useTheme();
   const copy = COPY[lang];
-  const pct = Math.min(step * 20, 99);
-  const captionLabel = copy.loadingCaption.replace('0x', `0${Math.max(1, Math.min(5, step || 1))}`);
 
   return (
     <div style={{ maxWidth: 820, margin: '0 auto' }}>
@@ -42,144 +51,121 @@ export default function AnalyzerLoading({ step }: AnalyzerLoadingProps) {
                 textTransform: 'uppercase',
               }}
             >
-              {captionLabel}
+              {lang === 'fr' ? '§ Analyse en cours' : '§ Analyzing'}
             </span>
           </div>
           <span
-            className="mono tnum"
-            style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em' }}
+            className="mono"
+            style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}
           >
-            {pct.toString().padStart(2, '0')}%
+            {lang === 'fr' ? '5 analyses parallèles' : '5 parallel passes'}
           </span>
         </div>
 
-        {/* Progress rail */}
-        <div style={{ height: 5, background: 'rgba(10,10,10,0.1)', position: 'relative' }}>
+        {/* Indeterminate scanner — CSS animation, no fake % value */}
+        <div
+          style={{
+            position: 'relative',
+            height: 5,
+            background: 'rgba(10,10,10,0.1)',
+            overflow: 'hidden',
+          }}
+        >
           <div
             style={{
               position: 'absolute',
-              inset: 0,
-              width: `${pct}%`,
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: '40%',
               background: 'var(--sa-red)',
-              transition: 'width 320ms cubic-bezier(0.2, 0, 0, 1)',
+              animation: 'sa-scorecard-scan 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite',
             }}
           />
         </div>
 
-        {/* Step list */}
+        {/* All 5 categories shown as concurrent — no fake sequencing */}
         <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-          {copy.steps.map((s, i) => {
-            const done = step > s.id;
-            const active = step === s.id;
-            return (
-              <li
-                key={s.id}
+          {copy.steps.map((s, i) => (
+            <li
+              key={s.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 24,
+                padding: '18px 24px',
+                borderBottom: i < copy.steps.length - 1 ? '1px solid var(--sa-rule)' : 0,
+              }}
+            >
+              <span
+                className="mono tnum"
                 style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 24,
-                  padding: '20px 24px',
-                  background: active ? 'var(--sa-cream-2)' : 'transparent',
-                  borderBottom: i < copy.steps.length - 1 ? '1px solid var(--sa-rule)' : 0,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: 'var(--sa-ink)',
                 }}
               >
-                {active && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      width: 3,
-                      background: 'var(--sa-red)',
-                    }}
-                  />
-                )}
-                <span
-                  className="mono tnum"
+                {s.id.toString().padStart(2, '0')}
+              </span>
+              <span
+                style={{
+                  width: 36,
+                  height: 36,
+                  border: '1px solid var(--sa-ink)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--sa-font-mono)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--sa-ink)',
+                  flexShrink: 0,
+                }}
+                aria-hidden
+              >
+                {GLYPHS[i]}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
                   style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    color: done ? 'var(--sa-ink-4)' : 'var(--sa-ink)',
-                  }}
-                >
-                  {s.id.toString().padStart(2, '0')}
-                </span>
-                <span
-                  style={{
-                    width: 40,
-                    height: 40,
-                    border: done ? '1px solid var(--sa-rule)' : '1px solid var(--sa-ink)',
-                    background: active ? 'var(--sa-ink)' : 'transparent',
-                    color: active
-                      ? 'var(--sa-cream)'
-                      : done
-                      ? 'var(--sa-ink-4)'
-                      : 'var(--sa-ink-3)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'var(--sa-font-mono)',
                     fontSize: 14,
-                    fontWeight: 700,
-                    flexShrink: 0,
+                    fontWeight: 600,
+                    letterSpacing: '-0.01em',
+                    color: 'var(--sa-ink)',
                   }}
-                  aria-hidden
                 >
-                  {GLYPHS[i]}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      letterSpacing: '-0.01em',
-                      color: done ? 'var(--sa-ink-4)' : 'var(--sa-ink)',
-                      textDecoration: done ? 'line-through' : 'none',
-                    }}
-                  >
-                    {s.label}
-                  </div>
-                  {active && (
-                    <div
-                      className="mono"
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: '0.06em',
-                        color: 'var(--sa-ink-3)',
-                        marginTop: 4,
-                      }}
-                    >
-                      {s.desc}
-                    </div>
-                  )}
+                  {s.label}
                 </div>
-                <span
+                <div
                   className="mono"
                   style={{
                     fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    padding: '4px 8px',
-                    border: `1px solid ${
-                      done ? 'var(--sa-ok)' : active ? 'var(--sa-ink)' : 'var(--sa-rule)'
-                    }`,
-                    background: active ? 'var(--sa-ink)' : 'transparent',
-                    color: done
-                      ? 'var(--sa-ok)'
-                      : active
-                      ? 'var(--sa-cream)'
-                      : 'var(--sa-ink-4)',
+                    letterSpacing: '0.06em',
+                    color: 'var(--sa-ink-3)',
+                    marginTop: 2,
                   }}
                 >
-                  {done ? 'DONE' : active ? 'RUN' : 'WAIT'}
-                </span>
-              </li>
-            );
-          })}
+                  {s.desc}
+                </div>
+              </div>
+              <span
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  padding: '3px 8px',
+                  border: '1px solid var(--sa-ink)',
+                  background: 'var(--sa-ink)',
+                  color: 'var(--sa-cream)',
+                }}
+              >
+                {lang === 'fr' ? 'EN COURS' : 'RUNNING'}
+              </span>
+            </li>
+          ))}
         </ol>
 
         {/* Footer */}
@@ -198,7 +184,7 @@ export default function AnalyzerLoading({ step }: AnalyzerLoadingProps) {
           }}
         >
           <span>{copy.loadingFooter}</span>
-          <span className="tnum">{Math.max(0, Math.min(5, step))}/5</span>
+          <span>{lang === 'fr' ? '~ 30 s' : '~ 30 s'}</span>
         </div>
       </div>
     </div>

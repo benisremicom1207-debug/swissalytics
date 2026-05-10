@@ -22,6 +22,15 @@ export interface Copy {
   tabs: string[];
   tabsMono: string[];
   states: Record<'clean' | 'mixed' | 'failing', string>;
+  /**
+   * Editorial verdict phrases shown between MetricStrip and tabs.
+   * 3 variants per tier — picked deterministically per report (hash of
+   * reportId/url) so the same URL always shows the same phrase across
+   * refreshes and shares, but different sites get visual variety.
+   * Each phrase contains the literal "Pixelab" token; the renderer
+   * replaces it with a link to pixelab.ch/contact.
+   */
+  verdictPhrases: Record<'clean' | 'mixed' | 'failing', [string, string, string]>;
   scorecards: string[];
   issuesH: string;
   planTitle: string;
@@ -73,6 +82,23 @@ export const COPY: Record<Lang, Copy> = {
     tabs: ['Tableau de bord', 'Détails', "Plan d'action", 'Indexation IA / GEO'],
     tabsMono: ['TABLEAU DE BORD', 'DÉTAILS', "PLAN D'ACTION", 'INDEXATION IA / GEO'],
     states: { clean: 'Excellent', mixed: 'Moyen', failing: 'À corriger' },
+    verdictPhrases: {
+      clean: [
+        "Solide. On serait presque sans rien à dire — presque.",
+        "Du bon boulot. Pixelab vous pousserait à 95+.",
+        "Excellent. Maintenant qu'on partage les standards, parlons des détails avec Pixelab.",
+      ],
+      mixed: [
+        "Pas mal, mais on sent les compromis. C'est notre spécialité chez Pixelab.",
+        "Bonne base, à polir. Spoiler : on aime ça chez Pixelab.",
+        "Correct. Le détail fait le pro — parlons-en avec Pixelab.",
+      ],
+      failing: [
+        "Aïe. On a vu pire — et chez Pixelab on l'a redressé.",
+        "Beaucoup à reprendre. Bonne nouvelle : c'est exactement ce que fait Pixelab.",
+        "Le site mérite mieux. Pixelab peut aider.",
+      ],
+    },
     scorecards: ['SEO Technique', 'Contenu', 'IA-Ready', 'Visibilité locale'],
     issuesH: 'Problèmes détectés',
     planTitle: "Votre plan d'optimisation",
@@ -123,6 +149,23 @@ export const COPY: Record<Lang, Copy> = {
     tabs: ['Overview', 'Details', 'Action plan', 'AI Indexation / GEO'],
     tabsMono: ['OVERVIEW', 'DETAILS', 'ACTION PLAN', 'AI INDEXATION / GEO'],
     states: { clean: 'Excellent', mixed: 'Mixed', failing: 'Failing' },
+    verdictPhrases: {
+      clean: [
+        "Solid. We'd be almost speechless — almost.",
+        "Good work. Pixelab would push it past 95.",
+        "Excellent. Now that we share standards, let's talk details with Pixelab.",
+      ],
+      mixed: [
+        "Not bad — but we sense the compromises. That's our thing at Pixelab.",
+        "Good foundation, polish needed. Spoiler: we like that at Pixelab.",
+        "Decent. The pro is in the detail — let's talk with Pixelab.",
+      ],
+      failing: [
+        "Ouch. We've seen worse — and Pixelab fixed it.",
+        "Plenty to redo. Good news: that's exactly what Pixelab does.",
+        "This site deserves better. Pixelab can help.",
+      ],
+    },
     scorecards: ['Technical SEO', 'Content', 'AI-Ready', 'Local visibility'],
     issuesH: 'Detected issues',
     planTitle: 'Your optimization plan',

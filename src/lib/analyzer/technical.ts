@@ -3,6 +3,7 @@ import https from 'https';
 import http from 'http';
 import type { TechnicalAnalysis, AccessibilityBasics, Issue, CwvMetrics } from '../types';
 import { validateUrl } from '@/lib/security';
+import { fetchPageSpeed } from '@/lib/pagespeed/client';
 
 async function fetchText(url: string, maxRedirects = 5): Promise<{ ok: boolean; text: string }> {
   try {
@@ -52,27 +53,19 @@ async function fetchText(url: string, maxRedirects = 5): Promise<{ ok: boolean; 
 }
 
 export async function fetchCoreWebVitals(url: string, strategy: 'mobile' | 'desktop' = 'mobile'): Promise<CwvMetrics | undefined> {
-  try {
-    const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;
-    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance${apiKey ? `&key=${apiKey}` : ''}`;
-    console.log('[CWV] API key present:', !!apiKey);
-    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(30000) });
-    if (!res.ok) return undefined;
-    const data = await res.json();
-    const audits = data.lighthouseResult?.audits;
-    const perf = data.lighthouseResult?.categories?.performance?.score;
-    if (!audits || perf === undefined) return undefined;
-    return {
-      performance: Math.round(perf * 100),
-      fcp: audits['first-contentful-paint']?.numericValue || 0,
-      lcp: audits['largest-contentful-paint']?.numericValue || 0,
-      cls: audits['cumulative-layout-shift']?.numericValue || 0,
-      tbt: audits['total-blocking-time']?.numericValue || 0,
-      si: audits['speed-index']?.numericValue || 0,
-    };
-  } catch {
-    return undefined;
-  }
+  // P7.5 — share the unified PageSpeed client + 5min cache. When
+  // /api/geo-analyze has already called Lighthouse for the same URL
+  // (mobile), this hits the cache instead of issuing a 2nd API call.
+  const ps = await fetchPageSpeed(url, strategy);
+  if (!ps) return undefined;
+  return {
+    performance: ps.performance,
+    fcp: ps.metrics.fcp,
+    lcp: ps.metrics.lcp,
+    cls: ps.metrics.cls,
+    tbt: ps.metrics.tbt,
+    si:  ps.metrics.si,
+  };
 }
 
 export function detectCMS($: CheerioAPI, html: string): string | null {

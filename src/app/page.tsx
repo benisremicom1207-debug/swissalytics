@@ -30,7 +30,6 @@ export default function HomePage() {
   const [reportId, setReportId] = useState<string | null>(null);
   const [degraded, setDegraded] = useState<boolean>(false);
   const [error, setError] = useState('');
-  const [loadingStep, setLoadingStep] = useState(0);
   const [cwvLoading, setCwvLoading] = useState(false);
   const [easterEgg, setEasterEgg] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -63,15 +62,10 @@ export default function HomePage() {
     setResult(null);
     setReportId(null);
     setDegraded(false);
-    setLoadingStep(0);
 
     setTimeout(() => {
       loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
-
-    const stepInterval = setInterval(() => {
-      setLoadingStep((prev) => (prev < 4 ? prev + 1 : prev));
-    }, 3000);
 
     try {
       const response = await fetch('/api/analyze', {
@@ -79,9 +73,6 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: validatedUrl }),
       });
-
-      clearInterval(stepInterval);
-      setLoadingStep(5);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -166,7 +157,6 @@ export default function HomePage() {
       }
       setError(errorMessage);
     } finally {
-      clearInterval(stepInterval);
       setLoading(false);
     }
   };
@@ -177,7 +167,7 @@ export default function HomePage() {
 
       {loading && (
         <section ref={loadingRef} className="scroll-mt-24" style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 24px' }}>
-          <AnalyzerLoading step={loadingStep} />
+          <AnalyzerLoading />
         </section>
       )}
 

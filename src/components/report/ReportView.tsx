@@ -6,6 +6,7 @@ import { useTheme } from '@/components/design-system/ThemeProvider';
 import { COPY } from '@/lib/i18n/copy';
 import { scoreColor } from '@/components/design-system/primitives';
 import { buildPlan, verdictOf } from '@/lib/engine/plan';
+import { pickVerdictIndex } from '@/lib/engine/verdictPicker';
 import type { AnalysisResult, Issue } from '@/lib/types';
 import DegradedBanner from './DegradedBanner';
 import { Gauge } from './Gauge';
@@ -137,19 +138,12 @@ export default function ReportView({
   // Details section
   const [section, setSection] = useState<DetailsSectionKey>('headings');
 
-  // Verdict
+  // Verdict — re-added after P7.2 with editorial copy (3 phrases per
+  // tier, picked deterministically by report seed) + inline Pixelab
+  // link. Same URL = same phrase across refreshes/shares.
   const verdict = verdictOf(report.score);
-  const verdictText = isFr
-    ? verdict === 'clean'
-      ? "Site excellent — prêt pour Google et l'IA."
-      : verdict === 'mixed'
-      ? 'Site correct, quelques ajustements à faire.'
-      : 'Site à corriger — plusieurs problèmes critiques.'
-    : verdict === 'clean'
-    ? 'Excellent site — ready for Google and AI.'
-    : verdict === 'mixed'
-    ? 'Decent site, a few fixes to do.'
-    : 'Site needs work — several critical issues.';
+  const verdictPhrases = copy.verdictPhrases[verdict];
+  const verdictPhrase = verdictPhrases[pickVerdictIndex(reportId ?? report.url, verdictPhrases.length)];
 
   const verdictState = isFr
     ? verdict === 'clean'
@@ -286,21 +280,48 @@ export default function ReportView({
         </div>
       </div>
 
-      {/* 2. Verdict line */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--sa-rule)' }}>
+      {/* 2. Verdict line — editorial copy with inline Pixelab CTA.
+          Pick 1 of 3 phrases per tier, deterministic by reportId/url. */}
+      <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--sa-rule)' }}>
         <p
           className="serif"
           style={{
             fontFamily: 'var(--sa-font-serif)',
             fontStyle: 'italic',
-            fontSize: 'clamp(18px, 2vw, 24px)',
-            lineHeight: 1.4,
+            fontSize: 'clamp(17px, 1.8vw, 22px)',
+            lineHeight: 1.45,
             margin: 0,
             color: 'var(--sa-ink)',
             fontWeight: 500,
           }}
         >
-          &laquo; {verdictText} &raquo;
+          &laquo;{' '}
+          {(() => {
+            // Render the phrase, replacing the literal "Pixelab" with a styled link.
+            const parts = verdictPhrase.split('Pixelab');
+            return parts.map((part, i) => (
+              <span key={i}>
+                {part}
+                {i < parts.length - 1 && (
+                  <a
+                    href="https://pixelab.ch/contact"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: 'var(--sa-red)',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '3px',
+                      fontStyle: 'italic',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Pixelab
+                  </a>
+                )}
+              </span>
+            ));
+          })()}{' '}
+          &raquo;
         </p>
       </div>
 

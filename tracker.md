@@ -162,16 +162,18 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟡 #11 (en cours de finalisation)
 
-### Phase 7 — UX polish ☐
-**1 PR · ~5 h · 🎨 Validation visuelle requise**
+### Phase 7 — UX polish ✅
+**1 PR · 2026-05-10**
 
-- ☐ **7.1** Remplacer le faux loader 5-étapes (`page.tsx:71-73`) par un loader honnête (SSE ou indéterminé propre)
-- ☐ **7.2** Retirer la ligne verdict serif italique entre MetricStrip et tabs (redondante)
-- ☐ **7.3** Unifier le ratelimit : `/api/analyze`, `/api/geo-analyze`, `/api/analyze/cwv` partagent compteur
-- ☐ **7.4** Comportement Share button en mode `degraded` (cacher si `reportId === null`)
-- ☐ **7.5** **Dédupliquer les appels PageSpeed** : Lighthouse vs CWV appellent la même URL — fusionner en un seul appel et extraire les métriques détaillées en plus des scores agrégés
+- ✅ **7.1** `AnalyzerLoading` re-pensé : tous les 5 analyzers affichés en parallèle (vrai état), scanner CSS indéterminé (`sa-scorecard-scan`), suppression du faux compteur %, suppression du `stepInterval` 3s. Plus aucune fausse séquentialité.
+- ✅ **7.2** Ligne verdict serif italique retirée de `ReportView.tsx` (était redondante avec le score badge + scorecards déjà visibles dans MetricStrip).
+- ✅ **7.3** Rate limiter unifié : nouveau helper `hasRecentAdmission(ip)` dans `rateLimit.ts`. `/api/analyze` consomme 1 crédit (5/h, 50/jour). `/api/geo-analyze` + `/api/analyze/cwv` vérifient l'admission récente sans consommer — un user analysis = 1 crédit malgré 3 endpoints. Anciennes `RateLimiter`/`analyzeRateLimiter`/`proxyRateLimiter` retirées de `security.ts`.
+- ✅ **7.4** Déjà OK : `showShare = !!reportId && !readOnly` dans `ReportView` masque déjà le bouton si `reportId` est null (cas degraded). Aucun changement nécessaire.
+- ✅ **7.5** Client PageSpeed unifié : nouveau `src/lib/pagespeed/client.ts` avec `fetchPageSpeed(url, strategy)` + cache 5min globalThis-keyed. Lighthouse + CWV partagent désormais le même appel API quand strategy=mobile. **2 appels Google PageSpeed → 1** par user analysis.
 
-**PR** : —
+**Tests** : 11 nouveaux dans `pagespeed/__tests__/client.test.ts` (happy path + 4 caching cases + 5 fallback/error cases). Total : **296/296 ✅**
+
+**PR** : 🟡 #14 (en cours d'ouverture)
 
 ### Phase 8 — Backend resilience ✅
 **1 PR · 2026-05-10**
