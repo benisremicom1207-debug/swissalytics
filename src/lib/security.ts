@@ -97,44 +97,8 @@ export async function validateUrl(url: string): Promise<void> {
   }
 }
 
-/**
- * In-memory IP-based rate limiter with sliding window.
- */
-export class RateLimiter {
-  private requests: Map<string, number[]> = new Map();
-  private readonly limit: number;
-  private readonly windowMs: number;
-
-  constructor(limit: number, windowMs: number) {
-    this.limit = limit;
-    this.windowMs = windowMs;
-  }
-
-  /**
-   * Check whether the given IP is within rate limits.
-   * Returns true if the request is allowed, false if rate-limited.
-   */
-  check(ip: string): boolean {
-    const now = Date.now();
-    const windowStart = now - this.windowMs;
-
-    let timestamps = this.requests.get(ip) || [];
-    // Remove expired entries
-    timestamps = timestamps.filter((t) => t > windowStart);
-
-    if (timestamps.length >= this.limit) {
-      this.requests.set(ip, timestamps);
-      return false;
-    }
-
-    timestamps.push(now);
-    this.requests.set(ip, timestamps);
-    return true;
-  }
-}
-
-/** Rate limiter for /api/analyze — 5 requests per minute */
-export const analyzeRateLimiter = new RateLimiter(5, 60_000);
-
-/** Rate limiter for /api/image-proxy — 30 requests per minute */
-export const proxyRateLimiter = new RateLimiter(30, 60_000);
+// P7.3 — `RateLimiter` class removed in favor of the unified
+// `checkRateLimit` / `hasRecentAdmission` API in `./security/rateLimit.ts`.
+// All 3 analyze endpoints now share a single sliding-window bucket
+// (5/h + 50/day on /api/analyze, follow-up enrichment endpoints
+// verify recent admission without consuming credits).

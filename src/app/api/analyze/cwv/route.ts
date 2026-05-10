@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchCoreWebVitals, applyCwvToTechnical } from '@/lib/analyzer/technical';
-import { validateUrl, RateLimiter } from '@/lib/security';
+import { validateUrl } from '@/lib/security';
+import { hasRecentAdmission, getClientIp } from '@/lib/security/rateLimit';
 
 const CORS = {
   'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://swissalytics.com',
@@ -8,19 +9,18 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-/** Separate rate limiter for CWV — 10 requests per minute */
-const cwvRateLimiter = new RateLimiter(10, 60_000);
-
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    if (!cwvRateLimiter.check(clientIp)) {
+    // P7.3 — unified rate limit. CWV is a follow-up enrichment;
+    // the IP must have called /api/analyze in the past hour.
+    const clientIp = getClientIp(request);
+    if (!hasRecentAdmission(clientIp)) {
       return NextResponse.json(
-        { error: 'Trop de requêtes — veuillez patienter avant de réessayer.' },
+        { error: 'Aucune analyse récente détectée pour cette IP — lancez d\'abord une analyse via /api/analyze.' },
         { status: 429, headers: CORS }
       );
     }

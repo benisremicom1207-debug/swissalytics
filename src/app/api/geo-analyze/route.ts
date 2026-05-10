@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateUrl, analyzeRateLimiter } from '@/lib/security';
+import { validateUrl } from '@/lib/security';
+import { hasRecentAdmission, getClientIp } from '@/lib/security/rateLimit';
 import { runLighthouseAudit } from '@/lib/analyzers/lighthouse';
 import { analyzeSEO } from '@/lib/analyzers/seo';
 import { analyzeGEOIndexation } from '@/lib/analyzers/geo-indexation';
@@ -45,10 +46,14 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    if (!analyzeRateLimiter.check(clientIp)) {
+    // P7.3 — unified rate limit. Enrichment endpoints don't consume
+    // their own credits; they verify the IP has been admitted by a
+    // recent /api/analyze call (within the past hour). Spammers
+    // hitting /api/geo-analyze without a prior /api/analyze get 429.
+    const clientIp = getClientIp(request);
+    if (!hasRecentAdmission(clientIp)) {
       return NextResponse.json(
-        { error: 'Trop de requêtes — veuillez patienter avant de réessayer.' },
+        { error: 'Aucune analyse récente détectée pour cette IP — lancez d\'abord une analyse via /api/analyze.' },
         { status: 429, headers: CORS }
       );
     }

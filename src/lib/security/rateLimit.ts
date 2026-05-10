@@ -58,6 +58,21 @@ export interface RateLimitResult {
 }
 
 /**
+ * Returns true if `ip` has at least one admitted hit in the last hour.
+ * Used by enrichment endpoints (/api/geo-analyze, /api/analyze/cwv) to
+ * verify that the caller has been admitted by a recent /api/analyze
+ * call — without consuming additional rate-limit credits (P7.3).
+ *
+ * Pure read; never mutates the bucket.
+ */
+export function hasRecentAdmission(ip: string): boolean {
+  const bucket = getBuckets().get(ip);
+  if (!bucket) return false;
+  const hourCutoff = Date.now() - HOUR_MS;
+  return bucket.hits.some((ts) => ts > hourCutoff);
+}
+
+/**
  * Check and record a hit for `ip`. Call this exactly once per admitted request.
  */
 export function checkRateLimit(ip: string): RateLimitResult {
