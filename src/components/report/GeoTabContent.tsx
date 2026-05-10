@@ -8,6 +8,7 @@ import type {
   LighthouseScores,
 } from '@/lib/analyzers/types';
 import SpaWarning from './SpaWarning';
+import GeoDegradedBanner from './GeoDegradedBanner';
 
 /**
  * GeoTabContent — 4ᵉ onglet "Indexation IA / GEO".
@@ -39,6 +40,7 @@ export function GeoTabContent({ report, isFr }: GeoTabContentProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {report.spa && <SpaWarning spa={report.spa} />}
+      {geo.degraded && <GeoDegradedBanner degraded={geo.degraded} />}
       <IndexationPanel indexation={geo.geo.indexation} isFr={isFr} />
       <LighthousePanel lighthouse={geo.seo.lighthouse} isFr={isFr} />
       <SchemaPanel schema={geo.geo.schema} isFr={isFr} />
