@@ -1,12 +1,12 @@
 /**
  * Analyseur Lighthouse
- * 
- * Intègre Google Lighthouse pour auditer:
- * - Performance
- * - Accessibilité
- * - Best Practices
- * - SEO technique
+ *
+ * Wraps the unified PageSpeed client (`@/lib/pagespeed/client`) for
+ * the GEO composite score. Falls back to an HTML-based estimator when
+ * no API key is set or the PageSpeed call fails.
  */
+
+import { fetchPageSpeed } from '@/lib/pagespeed/client';
 
 export interface LighthouseResult {
   performance: number;
@@ -27,33 +27,29 @@ export interface LighthouseResult {
 export async function runLighthouseAudit(url: string): Promise<LighthouseResult> {
   console.log(`[Lighthouse] Démarrage audit de ${url}...`);
 
-  const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;
-
-  // If API key is available, use official PageSpeed Insights
-  if (apiKey) {
-    try {
-      const result = await fetchPageSpeedInsights(url, apiKey);
-
-      return {
-        performance: result.performance * 100,
-        accessibility: result.accessibility * 100,
-        bestPractices: result.bestPractices * 100,
-        seo: result.seo * 100,
-        metrics: {
-          fcp: result.metrics.fcp,
-          lcp: result.metrics.lcp,
-          cls: result.metrics.cls,
-          tti: result.metrics.tti,
-        },
-      };
-    } catch (error) {
-      console.error('[Lighthouse] PageSpeed API error, falling back to estimation:', error);
-      // Fall through to estimation mode
-    }
+  // P7.5 — single shared PageSpeed call (mobile). The same response
+  // is also consumed by /api/analyze/cwv via the cache, so a back-
+  // to-back enrichment doesn't re-issue the network call.
+  const ps = await fetchPageSpeed(url, 'mobile');
+  if (ps) {
+    return {
+      performance:   ps.performance,
+      accessibility: ps.accessibility,
+      bestPractices: ps.bestPractices,
+      seo:           ps.seo,
+      metrics: {
+        fcp: ps.metrics.fcp,
+        lcp: ps.metrics.lcp,
+        cls: ps.metrics.cls,
+        tti: ps.metrics.tti,
+      },
+    };
   }
 
-  // Fallback: Estimate performance by fetching the page
-  console.log('[Lighthouse] Mode estimation (pas de clé API ou erreur)');
+  // Fallback: Estimate performance by fetching the page (no API key
+  // OR PageSpeed call failed). The fetchPageSpeed helper already
+  // logged the failure reason if one occurred.
+  console.log('[Lighthouse] Mode estimation (pas de clé API ou erreur PageSpeed)');
   return estimatePerformance(url);
 }
 
@@ -202,41 +198,6 @@ function estimateBestPracticesFromHTML(html: string, url: string): number {
   if (/document\.write/i.test(html)) score -= 10;
 
   return Math.min(Math.max(score, 40), 95);
-}
-
-/**
- * Appel PageSpeed Insights API
- * https://developers.google.com/speed/docs/insights/v5/get-started
- */
-async function fetchPageSpeedInsights(url: string, apiKey: string) {
-  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&category=performance&category=accessibility&category=best-practices&category=seo&strategy=mobile`;
-
-  const response = await fetch(apiUrl);
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    throw new Error(`PageSpeed API error: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-
-  // Validate response structure
-  if (!data.lighthouseResult?.categories) {
-    throw new Error('Invalid PageSpeed API response structure');
-  }
-
-  return {
-    performance: data.lighthouseResult.categories.performance?.score ?? 0,
-    accessibility: data.lighthouseResult.categories.accessibility?.score ?? 0,
-    bestPractices: data.lighthouseResult.categories['best-practices']?.score ?? 0,
-    seo: data.lighthouseResult.categories.seo?.score ?? 0,
-    metrics: {
-      fcp: data.lighthouseResult.audits?.['first-contentful-paint']?.numericValue ?? 2000,
-      lcp: data.lighthouseResult.audits?.['largest-contentful-paint']?.numericValue ?? 4000,
-      cls: data.lighthouseResult.audits?.['cumulative-layout-shift']?.numericValue ?? 0.1,
-      tti: data.lighthouseResult.audits?.interactive?.numericValue ?? 5000,
-    },
-  };
 }
 
 /**
