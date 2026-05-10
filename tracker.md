@@ -246,21 +246,16 @@ Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent
 
 **PR** : 🟡 (en cours d'ouverture)
 
-### Phase 10 — Dédupliquer l'affichage des liens internes ☐
-**1 PR · ~1 h · indépendant**
+### Phase 10 — Dédupliquer l'affichage des liens internes ✅
+**1 PR · 2026-05-10**
 
-Dans l'onglet "Liens & navigation" (`LinksTab.tsx`), les URLs identiques apparaissent plusieurs fois (ex : `/services/`, `/contact/` listés 2-3× quand la page a header + footer + sous-nav). Le moteur compte correctement les occurrences DOM, mais l'affichage gagne en lisibilité avec dédup.
+- ✅ **10.1** Nouveau helper `src/lib/analyzer/dedup-links.ts` (`groupLinksByHref`) qui groupe par href canonique, collecte les textes d'ancrage uniques en ordre d'apparition, OR-merge les attributs nofollow/sponsored/ugc (pessimiste), préserve l'ordre d'insertion
+- ✅ **10.2** `LinksTab` utilise le helper pour les **deux** tables (internes + externes) — affichage : `URL · ×N badge si >1 · texts joined " · " · attrs OR-merged`
+- ✅ **10.3** Titre de section adapté : `N URL uniques (M liens DOM)` pour conserver la transparence sur le total brut. Backend `links.ts` inchangé.
 
-- ☐ **10.1** Dans `LinksTab.tsx`, grouper par `href` (URL canonique). Afficher chaque URL une seule fois, avec :
-  - Liste des textes d'ancrage uniques (`Set<string>`) si plusieurs
-  - Compteur d'occurrences (`× 3`)
-  - Attributs (dofollow / nofollow / sponsored) — afficher l'union si conflit
-- ☐ **10.2** Same dédup pour les liens externes
-- ☐ **10.3** Backend (`lib/analyzer/links.ts`) reste inchangé — le total brut reste correct pour le score, c'est juste l'affichage qui change
+**Tests** : 9 nouveaux dans `dedup-links.test.ts` (regression empty / single / dup count / unique texts / insertion order / OR merge attrs / fixture sunrise-shaped). Total : **264/264 ✅**
 
-**Note** : naturellement intégré dans P5 si on rewrite `LinksTab` en brutalist v2 à ce moment-là. Si P5 vient avant P10, fusionner les deux. Si P10 arrive avant, garder isolé.
-
-**PR** : —
+**PR** : 🟡 #12 (en cours d'ouverture)
 
 ---
 
