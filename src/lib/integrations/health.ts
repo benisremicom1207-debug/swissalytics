@@ -31,6 +31,13 @@ export interface IntegrationHealth {
 }
 
 const HEALTH_TIMEOUT_MS = 6_000;
+/**
+ * PageSpeed dédié : Google PageSpeed Insights peut prendre 30-50s même
+ * sur une URL minimale comme example.com (le worker Lighthouse provisionne
+ * un browser headless à chaque appel). 6s tuait systématiquement le check
+ * en faisant croire à un degraded alors que la clé est OK.
+ */
+const PAGESPEED_HEALTH_TIMEOUT_MS = 60_000;
 
 function timed<T>(p: Promise<T>): Promise<{ value: T; ms: number }> {
   const start = Date.now();
@@ -171,7 +178,7 @@ export async function checkPageSpeed(): Promise<IntegrationHealth> {
     const url =
       `https://www.googleapis.com/pagespeedonline/v5/runPagespeed` +
       `?url=https://example.com&key=${key}&category=performance&strategy=mobile`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(PAGESPEED_HEALTH_TIMEOUT_MS) });
     const ms = Date.now() - start;
     if (res.ok) return { status: 'ok', latencyMs: ms };
     const body = await safeText(res);
