@@ -34,7 +34,7 @@ jobs:
               -o ConnectTimeout=15 \
               ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
 
-      - name: Smoke test
+      - name: Smoke test — homepage
         run: |
           sleep 3
           HTTP=$(curl -s -o /dev/null -w "%{http_code}" https://swissalytics.com/)
@@ -43,3 +43,21 @@ jobs:
             exit 1
           fi
           echo "Smoke test OK: HTTP 200"
+
+      - name: Smoke test — integrations health (P16)
+        # Pings every external API key for real (Gemini, OpenAI, Mistral,
+        # Anthropic, PageSpeed, MOZ). Fails if any CONFIGURED provider
+        # returns invalid_key/timeout/error so we catch stale keys at
+        # deploy time instead of from user-facing breakage.
+        run: |
+          BODY=$(curl -s -w "\nHTTP=%{http_code}" https://swissalytics.com/api/health/integrations)
+          HTTP=$(echo "$BODY" | tail -1 | sed 's/HTTP=//')
+          JSON=$(echo "$BODY" | sed '$d')
+          echo "$JSON" | python3 -m json.tool
+          if [ "$HTTP" != "200" ]; then
+            echo "::warning::Integrations degraded (HTTP $HTTP) — at least one provider is failing in prod"
+            # Soft-fail: warn but don't block the deploy. Stale keys
+            # shouldn't roll back a working deploy of unrelated code.
+          else
+            echo "All configured integrations OK"
+          fi
