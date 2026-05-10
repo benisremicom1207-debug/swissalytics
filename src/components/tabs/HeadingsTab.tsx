@@ -245,35 +245,6 @@ export default function HeadingsTab({ data, keywords, url, spa, keywordSuggestio
               </div>
             )}
 
-            {/* P14.D — LLM suggestions (what page SHOULD target) */}
-            {keywordSuggestions && keywordSuggestions.suggestions.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 12 }}>
-                  ★ Suggestions SEO actionables · IA
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
-                  {keywordSuggestions.suggestions.map((s, i) => (
-                    <div key={i} style={{ padding: 14, border: '2px solid var(--sa-red)', background: 'rgba(229, 36, 26, 0.04)' }}>
-                      <div className="mono" style={{ fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 6 }}>
-                        Suggestion {i + 1}
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--sa-ink)', marginBottom: 8 }}>
-                        « {s.keyword} »
-                      </div>
-                      {s.rationale && (
-                        <div style={{ fontSize: 12, color: 'var(--sa-ink-3)', lineHeight: 1.45 }}>
-                          {s.rationale}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mono" style={{ fontSize: 9, letterSpacing: '0.06em', color: 'var(--sa-ink-4)', marginTop: 6 }}>
-                  Généré par {keywordSuggestions.model} — comparer avec ce que la page propose actuellement (ci-dessous).
-                </div>
-              </div>
-            )}
-
             {/* Top 3 distinct targets (P13) */}
             {keywords.targets && keywords.targets.length > 1 && (
               <div style={{ marginBottom: 20 }}>
@@ -380,6 +351,38 @@ export default function HeadingsTab({ data, keywords, url, spa, keywordSuggestio
                 </div>
               );
             })()}
+          </section>
+        )}
+
+        {/* P14.D — LLM suggestions (what page SHOULD target). Placed
+            here, just above the Issues block, so the user reads them
+            after seeing the actual current state — and treats them as
+            actionable next steps rather than a prediction. */}
+        {keywordSuggestions && keywordSuggestions.suggestions.length > 0 && (
+          <section style={{ marginBottom: 20 }}>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 12 }}>
+              ★ Suggestions SEO actionables · IA
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+              {keywordSuggestions.suggestions.map((s, i) => (
+                <div key={i} style={{ padding: 14, border: '2px solid var(--sa-red)', background: 'rgba(229, 36, 26, 0.04)' }}>
+                  <div className="mono" style={{ fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 6 }}>
+                    Suggestion {i + 1}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--sa-ink)', marginBottom: 8 }}>
+                    « {s.keyword} »
+                  </div>
+                  {s.rationale && (
+                    <div style={{ fontSize: 12, color: 'var(--sa-ink-3)', lineHeight: 1.45 }}>
+                      {s.rationale}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mono" style={{ fontSize: 9, letterSpacing: '0.06em', color: 'var(--sa-ink-4)', marginTop: 6 }}>
+              Généré par {keywordSuggestions.model}.
+            </div>
           </section>
         )}
 
