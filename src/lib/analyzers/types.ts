@@ -123,6 +123,20 @@ export interface GeoProjection {
   sixMonths: GeoProjectionWindow;
 }
 
+/**
+ * Per-analyzer health flags surfaced in the API response when one or
+ * more sub-analyzers failed (timeout, transient API error). The route
+ * still returns a 200 with the partial composite, and the UI can show
+ * a degraded banner explaining which signals are missing. (P8)
+ */
+export interface GeoAnalysisDegradedFlags {
+  lighthouse: boolean;
+  seo: boolean;
+  geo: boolean;
+  schema: boolean;
+  eeat: boolean;
+}
+
 export interface GeoAnalysisResult {
   url: string;
   timestamp: string;
@@ -134,4 +148,11 @@ export interface GeoAnalysisResult {
   projection: GeoProjection;
   warnings?: string[];
   warningMessage?: string;
+  /**
+   * When present, at least one sub-analyzer failed and the score is
+   * computed from a partial dataset. Each `true` flag indicates a
+   * failed analyzer whose data is replaced by safe defaults.
+   * Absent when all 5 analyzers succeeded.
+   */
+  degraded?: GeoAnalysisDegradedFlags;
 }
