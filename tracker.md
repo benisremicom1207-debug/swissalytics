@@ -173,14 +173,16 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : —
 
-### Phase 8 — Backend resilience ☐
-**1 PR · ~3 h**
+### Phase 8 — Backend resilience ✅
+**1 PR · 2026-05-10**
 
-- ☐ **8.1** `/api/geo-analyze` : `Promise.allSettled` au lieu de `Promise.all`, fail-open par analyzer
-- ☐ **8.2** Timeout individuel : Lighthouse 15s, autres 5s
-- ☐ **8.3** Réponse partielle avec flags `degraded: { lighthouse: false, ... }` côté API + bandeau côté UI
+- ✅ **8.1** `/api/geo-analyze` : `Promise.allSettled` au lieu de `Promise.all`. Une rejection ne 500 plus la requête entière — fail-open par analyzer via `withTimeout` + `resolveOrFallback`.
+- ✅ **8.2** Timeouts par analyzer : Lighthouse 15s (PageSpeed externe), autres 5s (cheerio + fetches locaux). `withTimeout()` rejette avec `{ isTimeout: true, label, ms }` pour différencier vs erreur réelle, et `clearTimeout` pour éviter les handles fuyants.
+- ✅ **8.3** Réponse partielle : `degraded: { lighthouse, seo, geo, schema, eeat }` (optionnel, présent uniquement quand un ou + analyzers ont échoué). Composite calculé avec fallbacks zéro-score. Console.warn avec les raisons. Composant UI `<GeoDegradedBanner>` rendu en haut de `GeoTabContent` quand `geo.degraded` est défini — liste les analyzers manquants.
 
-**PR** : —
+**Tests** : 21 nouveaux dans `resilience.test.ts` (withTimeout resolve/reject/cleanup + resolveOrFallback + 5 fallbacks + isAnyDegraded). Total : **285/285 ✅**
+
+**PR** : 🟡 #13 (en cours d'ouverture)
 
 ### Phase 13 — Multi-keyword targets (top 3) ☐
 **Bundlée dans la PR #9 · 2026-05-09**

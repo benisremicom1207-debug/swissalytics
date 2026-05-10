@@ -6,7 +6,32 @@ import { analyzeGEOIndexation } from '@/lib/analyzers/geo-indexation';
 import { analyzeSchemaOrgMultiPage } from '@/lib/analyzers/schema-org';
 import { analyzeEEAT } from '@/lib/analyzers/eeat';
 import { calculateCompositeScore } from '@/lib/analyzers/composite-score';
+import {
+  withTimeout,
+  resolveOrFallback,
+  lighthouseFallback,
+  seoFallback,
+  geoIndexationFallback,
+  schemaOrgFallback,
+  eeatFallback,
+  isAnyDegraded,
+  type DegradedFlags,
+} from '@/lib/analyzers/resilience';
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
+
+/**
+ * Per-analyzer timeouts (P8.2). Lighthouse calls Google PageSpeed (or
+ * an internal estimator) which is the slowest step — give it 15s.
+ * The other 4 analyzers are local cheerio + cheap fetches, 5s is
+ * generous.
+ */
+const TIMEOUTS = {
+  lighthouse: 15_000,
+  seo: 5_000,
+  geo: 5_000,
+  schema: 5_000,
+  eeat: 5_000,
+} as const;
 
 const CORS = {
   'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || 'https://swissalytics.com',
@@ -52,82 +77,97 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'URL non autorisée' }, { status: 403, headers: CORS });
     }
 
-    // Run all 5 analyzers in parallel with 30s timeout
-    const analysisPromise = (async () => {
-      const [lighthouse, seo, geo, schema, eeat] = await Promise.all([
-        runLighthouseAudit(validatedUrl),
-        analyzeSEO(validatedUrl),
-        analyzeGEOIndexation(validatedUrl),
-        analyzeSchemaOrgMultiPage(validatedUrl),
-        analyzeEEAT(validatedUrl),
-      ]);
-
-      const composite = calculateCompositeScore({ lighthouse, seo, geo, schema, eeat });
-
-      const warnings: string[] = [];
-      if (lighthouse.isEstimated) {
-        warnings.push(lighthouse.warning || 'Scores Lighthouse estimés (pas de clé API Google PageSpeed)');
-      }
-
-      const result: GeoAnalysisResult = {
-        url: validatedUrl,
-        timestamp: new Date().toISOString(),
-        globalScore: composite.globalScore,
-        category: composite.category,
-        seo: {
-          score: composite.seo.score,
-          breakdown: composite.seo.breakdown,
-          lighthouse: {
-            performance: lighthouse.performance,
-            accessibility: lighthouse.accessibility,
-            bestPractices: lighthouse.bestPractices,
-            seo: lighthouse.seo,
-            isEstimated: lighthouse.isEstimated,
-            warning: lighthouse.warning,
-          },
-        },
-        geo: {
-          score: composite.geo.score,
-          breakdown: composite.geo.breakdown,
-          indexation: {
-            score: geo.score,
-            totalIndexed: geo.totalIndexed,
-            totalEnabled: geo.totalEnabled,
-            region: geo.region,
-            engines: geo.engines,
-          },
-          schema: {
-            score: schema.score,
-            totalFound: schema.totalFound,
-            schemas: schema.schemas,
-          },
-          eeat: {
-            score: eeat.score,
-            signals: {
-              teamPage: { found: eeat.signals.teamPage.found },
-              legalMentions: eeat.signals.legalMentions,
-              contactPage: { found: eeat.signals.contactPage.found },
-              testimonials: { found: eeat.signals.testimonials.found, count: eeat.signals.testimonials.count },
-            },
-          },
-        },
-        recommendations: composite.topRecommendations.map(r => ({
-          ...r,
-          timeframe: r.timeframe as string,
-        })),
-        projection: composite.projection,
-        warnings: warnings.length > 0 ? warnings : undefined,
-      };
-
-      return result;
-    })();
-
-    const result = await Promise.race([
-      analysisPromise,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: analyse trop longue (30s)')), 30000)
-      ),
+    // P8: Run all 5 analyzers in parallel with PER-ANALYZER timeouts
+    // and fail-open via Promise.allSettled. A single rejection no
+    // longer 500s the whole request — failed analyzers fall back to
+    // safe defaults and the response carries a `degraded` flag block
+    // so the UI can surface partial data clearly.
+    const settled = await Promise.allSettled([
+      withTimeout(runLighthouseAudit(validatedUrl),     TIMEOUTS.lighthouse, 'lighthouse'),
+      withTimeout(analyzeSEO(validatedUrl),             TIMEOUTS.seo,        'seo'),
+      withTimeout(analyzeGEOIndexation(validatedUrl),   TIMEOUTS.geo,        'geo'),
+      withTimeout(analyzeSchemaOrgMultiPage(validatedUrl), TIMEOUTS.schema,  'schema'),
+      withTimeout(analyzeEEAT(validatedUrl),            TIMEOUTS.eeat,       'eeat'),
     ]);
+
+    const degraded: DegradedFlags = { lighthouse: false, seo: false, geo: false, schema: false, eeat: false };
+    const degradedReasons: Record<keyof DegradedFlags, string | undefined> = {
+      lighthouse: undefined, seo: undefined, geo: undefined, schema: undefined, eeat: undefined,
+    };
+
+    const lighthouse = resolveOrFallback(settled[0], () => lighthouseFallback(degradedReasons.lighthouse ?? 'erreur inconnue'),
+      (r) => { degraded.lighthouse = true; degradedReasons.lighthouse = r; });
+    const seo    = resolveOrFallback(settled[1], seoFallback,           (r) => { degraded.seo    = true; degradedReasons.seo = r; });
+    const geo    = resolveOrFallback(settled[2], geoIndexationFallback, (r) => { degraded.geo    = true; degradedReasons.geo = r; });
+    const schema = resolveOrFallback(settled[3], schemaOrgFallback,     (r) => { degraded.schema = true; degradedReasons.schema = r; });
+    const eeat   = resolveOrFallback(settled[4], eeatFallback,          (r) => { degraded.eeat   = true; degradedReasons.eeat = r; });
+
+    if (isAnyDegraded(degraded)) {
+      console.warn('[/api/geo-analyze] Degraded:',
+        Object.entries(degraded).filter(([, v]) => v).map(([k]) => `${k}=${degradedReasons[k as keyof DegradedFlags]}`).join(' · ')
+      );
+    }
+
+    const composite = calculateCompositeScore({ lighthouse, seo, geo, schema, eeat });
+
+    const warnings: string[] = [];
+    if (lighthouse.isEstimated) {
+      warnings.push(lighthouse.warning || 'Scores Lighthouse estimés (pas de clé API Google PageSpeed)');
+    }
+    for (const [name, reason] of Object.entries(degradedReasons)) {
+      if (reason) warnings.push(`${name} indisponible : ${reason}`);
+    }
+
+    const result: GeoAnalysisResult = {
+      url: validatedUrl,
+      timestamp: new Date().toISOString(),
+      globalScore: composite.globalScore,
+      category: composite.category,
+      seo: {
+        score: composite.seo.score,
+        breakdown: composite.seo.breakdown,
+        lighthouse: {
+          performance: lighthouse.performance,
+          accessibility: lighthouse.accessibility,
+          bestPractices: lighthouse.bestPractices,
+          seo: lighthouse.seo,
+          isEstimated: lighthouse.isEstimated,
+          warning: lighthouse.warning,
+        },
+      },
+      geo: {
+        score: composite.geo.score,
+        breakdown: composite.geo.breakdown,
+        indexation: {
+          score: geo.score,
+          totalIndexed: geo.totalIndexed,
+          totalEnabled: geo.totalEnabled,
+          region: geo.region,
+          engines: geo.engines,
+        },
+        schema: {
+          score: schema.score,
+          totalFound: schema.totalFound,
+          schemas: schema.schemas,
+        },
+        eeat: {
+          score: eeat.score,
+          signals: {
+            teamPage: { found: eeat.signals.teamPage.found },
+            legalMentions: eeat.signals.legalMentions,
+            contactPage: { found: eeat.signals.contactPage.found },
+            testimonials: { found: eeat.signals.testimonials.found, count: eeat.signals.testimonials.count },
+          },
+        },
+      },
+      recommendations: composite.topRecommendations.map(r => ({
+        ...r,
+        timeframe: r.timeframe as string,
+      })),
+      projection: composite.projection,
+      warnings: warnings.length > 0 ? warnings : undefined,
+      degraded: isAnyDegraded(degraded) ? degraded : undefined,
+    };
 
     return NextResponse.json(result, { headers: CORS });
   } catch (err) {
