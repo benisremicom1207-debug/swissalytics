@@ -75,7 +75,7 @@ export async function fetchCoreWebVitals(url: string, strategy: 'mobile' | 'desk
   }
 }
 
-function detectCMS($: CheerioAPI, html: string): string | null {
+export function detectCMS($: CheerioAPI, html: string): string | null {
   // Major CMS
   if (html.includes('wp-content') || html.includes('wp-includes') || $('meta[name="generator"][content*="WordPress"]').length) return 'WordPress';
   if (html.includes('/media/jui/') || html.includes('Joomla') || $('meta[name="generator"][content*="Joomla"]').length) return 'Joomla';
@@ -86,7 +86,17 @@ function detectCMS($: CheerioAPI, html: string): string | null {
   if (html.includes('webflow.com') || html.includes('w-layout-grid')) return 'Webflow';
   if (html.includes('prestashop') || $('meta[name="generator"][content*="PrestaShop"]').length) return 'PrestaShop';
   if (html.includes('typo3') || $('meta[name="generator"][content*="TYPO3"]').length) return 'TYPO3';
-  if (html.includes('mage-') || html.includes('Magento') || html.includes('magento')) return 'Magento';
+  // Magento markers must be specific — `mage-` alone matches obfuscated
+  // Vue/React class names (e.g. sunrise.ch's `mage-container__TvwTI`).
+  // Real Magento sites carry one of: data-mage-init attr, Mage_Catalog
+  // legacy classes, magento_ URL prefix, or a generator meta.
+  if (
+    html.includes('data-mage-init') ||
+    html.includes('Mage_Catalog') ||
+    html.includes('magento_Catalog') ||
+    html.includes('/static/version/frontend/Magento') ||
+    $('meta[name="generator"][content*="Magento"]').length
+  ) return 'Magento';
 
   // Headless CMS / SaaS
   if (html.includes('contentful.com') || html.includes('ctfassets.net')) return 'Contentful';
