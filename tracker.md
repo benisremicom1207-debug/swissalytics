@@ -1,8 +1,9 @@
 # Frontend & Engine Overhaul — Tracker
 
-**Branche en cours** : `feat/p9-keyword-v2` (P0/P1/P2/P3/P6/P11/P12 mergées sur `main`)
+**Branche en cours** : `main` (toutes les phases P0→P19 mergées + déployées en prod)
 **Démarré** : 2026-05-04
-**Dernière maj** : 2026-05-09
+**Dernière maj** : 2026-05-11
+**Statut global** : 🟢 **TERMINÉ** — toutes les phases listées ci-dessous sont en prod sur https://swissalytics.com
 
 ## Légende
 - ☐ TODO
@@ -32,24 +33,10 @@
 
 ## Open questions à résoudre AVANT démarrage de la phase concernée
 
-### OQ1 (bloque P3 — Visualiser GEO)
-**Quelles clés API LLM tu fournis pour l'indexation IA ?**
+### OQ1 ✅ RÉSOLUE (2026-05-10)
+**Clés LLM configurées en prod** : `OPENAI_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `ANTHROPIC_API_KEY`. Couverture marché CH ≈ 73% (ChatGPT + Gemini + Claude + Mistral). Validé via `/api/health/integrations` (P16) qui retourne `status: ok` pour les 4 providers configurés. `MOZ_API_KEY` reste non configurée (`missing_key` intentionnel — pas critique, simulation backlinks).
 
-Aujourd'hui aucune clé n'est configurée → indexation = 0 partout, scorecards GEO inutiles.
-
-- **Critiques** (sans elles, P3 affiche "0 indexed" pour tous les sites) :
-  - `OPENAI_API_KEY` (ChatGPT, ~45% du marché)
-  - `GEMINI_API_KEY` (Google, ~25%)
-  - `PERPLEXITY_API_KEY` (~15%)
-- **Recommandées Europe FR** : `MISTRAL_API_KEY`, `BING_API_KEY`
-- **Optionnelle** : `MOZ_API_KEY` (Domain Authority pour E-E-A-T)
-
-**Choix utilisateur** :
-- (a) Fournir les 3 critiques avant P3
-- (b) Lancer P3 sans clés, ajouter plus tard (panneaux montreront "non testé")
-- (c) Fournir tout le set Europe FR (3 critiques + 2 recommandées)
-
-→ **À répondre avant démarrage P3.**
+**Note** : un caractère parasite avait été collé en fin de la `GEMINI_API_KEY` dans `.env.production` via nano (39 vs 40 chars). Détecté grâce à P16 et au logging body amélioré P15.B. Documenté dans `feedback_real_integration_tests.md`.
 
 ### OQ2 ✅ RÉSOLUE (2026-05-07)
 **Clé `GOOGLE_PAGESPEED_API_KEY` installée sur le VPS** dans `/var/www/swissalytics/app/.env.production`.
@@ -90,7 +77,7 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟢 #4 (squash-merged)
 
-### Phase 2 — Persister geoAnalysis + CWV en async ☐
+### Phase 2 — Persister geoAnalysis + CWV en async ✅
 **1 PR · 2026-05-09 · dépend P1, bloque P3 et P4**
 
 - ✅ **2.1** Migration Supabase appliquée sur prod : `ALTER TABLE reports ADD COLUMN geo_analysis JSONB, ADD COLUMN cwv JSONB` (fichier `20260509000000_add_enrichment_columns.sql`)
@@ -99,9 +86,9 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 - ✅ **2.4** `page.tsx` : helper `persistEnrichment(reportId, patch)` fire-and-forget, appelé après chaque `.then()` des fetches geo + cwv. Skip si `reportId === null` (mode degraded).
 - ✅ **2.5** `mergeEnrichment(stored)` dans `lib/engine/enrich.ts` — applique geoAnalysis + pénalité CWV sur `data` brut. Utilisé par `/api/report/[id]` GET et `/api/share/[slug]` GET.
 
-**PR** : 🟡 (en cours d'ouverture)
+**PR** : 🟢 (squash-merged)
 
-### Phase 3 — Visualiser le moteur GEO ☐
+### Phase 3 — Visualiser le moteur GEO ✅
 **1 PR · 2026-05-09 · 🎨 Validation visuelle**
 
 - ✅ **3.1** 4ᵉ tab `INDEXATION IA / GEO` ajoutée à `ReportView.tsx` + i18n FR/EN dans `copy.ts` (`tabs[3]` + `tabsMono[3]`). URL sync via `?tab=geo`.
@@ -117,7 +104,7 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **Note tests** : pas de test unitaire des composants React (le projet n'a pas `@testing-library/react`, pattern existant = pure-function tests + smoke validation manuelle, comme les 7 fichiers extraits en P6.3). Smoke test live + validation visuelle utilisateur servent de validation.
 
-**PR** : 🟡 (en cours d'ouverture)
+**PR** : 🟢 (squash-merged)
 
 ### Phase 4 — Plan unifié + Quality fixes ✅
 **1 PR · 2026-05-10 · dépend P2**
@@ -134,7 +121,7 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **Tests** : +59 nouveaux tests (19 plan + 33 EEAT + 14 SPA + 6 stopwords pronouns). Total : **209/209 ✅**, tsc + lint clean.
 
-**PR** : 🟡 #10 (en cours de finalisation)
+**PR** : 🟢 #10 (en cours de finalisation)
 
 ### Phase 5 — Porter onglets en brutalist v2 ✅
 **1 PR · 2026-05-10 · 🎨 Validé visuellement**
@@ -160,7 +147,7 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **Tests** : +47 nouveaux tests (12 enrichment + 7 technical-cms + 28 tech-categories). Total : **255/255 ✅**, tsc + lint clean.
 
-**PR** : 🟡 #11 (en cours de finalisation)
+**PR** : 🟢 #11 (en cours de finalisation)
 
 ### Phase 7 — UX polish ✅
 **1 PR · 2026-05-10**
@@ -173,7 +160,7 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **Tests** : 11 nouveaux dans `pagespeed/__tests__/client.test.ts` (happy path + 4 caching cases + 5 fallback/error cases). Total : **296/296 ✅**
 
-**PR** : 🟡 #14 (en cours d'ouverture)
+**PR** : 🟢 #14 (en cours d'ouverture)
 
 ### Phase 8 — Backend resilience ✅
 **1 PR · 2026-05-10**
@@ -184,7 +171,7 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **Tests** : 21 nouveaux dans `resilience.test.ts` (withTimeout resolve/reject/cleanup + resolveOrFallback + 5 fallbacks + isAnyDegraded). Total : **285/285 ✅**
 
-**PR** : 🟡 #13 (en cours d'ouverture)
+**PR** : 🟢 #13 (en cours d'ouverture)
 
 ### Phase 14 — Schema-first keyword extraction + LLM SEO suggestions ✅
 **1 PR · 2026-05-10**
@@ -197,9 +184,9 @@ Statistical extraction (P9 + P13) est descriptif (ce qui EST sur la page). P14 a
 
 **Tests** : +26 nouveaux (15 schema-keywords + 11 keyword-suggestions). Total : **311/311 ✅**
 
-**PR** : 🟡 #15 (en cours d'ouverture)
+**PR** : 🟢 #15 (en cours d'ouverture)
 
-### Phase 13 — Multi-keyword targets (top 3) ☐
+### Phase 13 — Multi-keyword targets (top 3) ✅
 **Bundlée dans la PR #9 · 2026-05-09**
 
 Découvert immédiatement après P9 : les sites réels (salt.ch fait internet + mobile + abonnement) ont **plusieurs thèmes business**, pas un seul. Le primary unique masque cette réalité.
@@ -211,7 +198,7 @@ Découvert immédiatement après P9 : les sites réels (salt.ch fait internet + 
 
 **Smoke** sur upc.ch : top 3 = `sunrise`, `internet`, `tv entertainment` (UPC est rebrand Sunrise, contenu allemand). Avant : top 3 = `sunrise`, `und`, `internet` (`und` étant pollutant).
 
-### Phase 9 — Keyword extraction v2 ☐
+### Phase 9 — Keyword extraction v2 ✅
 **Bundlée dans la PR #9 · 2026-05-09**
 
 Découvert pendant le smoke test P3 : sunrise.ch détectait "sunrise" comme mot-clé principal, avec issues absurdes ("brand absent du H1", "densité trop élevée 3.2%"). Refonte complète du moteur d'extraction.
@@ -229,9 +216,9 @@ Découvert pendant le smoke test P3 : sunrise.ch détectait "sunrise" comme mot-
 
 **Total tests** : 129/129 verts (+9 nouveaux fichier `keywords.test.ts`).
 
-**PR** : 🟡 (en cours d'ouverture)
+**PR** : 🟢 (squash-merged)
 
-### Phase 12 — Add Claude (Anthropic) provider ☐
+### Phase 12 — Add Claude (Anthropic) provider ✅
 **1 PR · 2026-05-09 · indépendant · étend l'OQ1**
 
 Claude (Anthropic) manquait totalement du registry des 12 providers. Omission notable vu sa part de marché significative en finance/tech (publics Pixelab cibles).
@@ -245,9 +232,9 @@ Claude (Anthropic) manquait totalement du registry des 12 providers. Omission no
 
 **Couverture marché CH** : ~73% (chatgpt 42 + gemini 18 + claude 6 + mistral 3 + autres marginaux non testés). Avant P11+P12 : 0%.
 
-**PR** : 🟡 (en cours d'ouverture)
+**PR** : 🟢 (squash-merged)
 
-### Phase 11 — Fixes LLM providers ☐
+### Phase 11 — Fixes LLM providers ✅
 **1 PR · 2026-05-09 · indépendant · débloque l'OQ1 partiellement**
 
 Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent l'indexation IA même quand les clés sont configurées correctement.
@@ -261,7 +248,7 @@ Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent
 
 **Note** : OQ1 partiellement résolue — Perplexity/Bing restent non testés faute de clés. Avec Gemini (gratuit) + Mistral (gratuit) + ChatGPT (~$5 dure des dizaines de milliers d'analyses), on couvre **environ 70% du marché IA en Suisse** (42% ChatGPT + 18% Gemini + 3% Mistral + petites diff selon adoption).
 
-**PR** : 🟡 (en cours d'ouverture)
+**PR** : 🟢 (squash-merged)
 
 ### Phase 10 — Dédupliquer l'affichage des liens internes ✅
 **1 PR · 2026-05-10**
@@ -272,25 +259,94 @@ Découvert au moment de configurer Gemini + Mistral : deux bugs latents bloquent
 
 **Tests** : 9 nouveaux dans `dedup-links.test.ts` (regression empty / single / dup count / unique texts / insertion order / OR merge attrs / fixture sunrise-shaped). Total : **264/264 ✅**
 
-**PR** : 🟡 #12 (en cours d'ouverture)
+**PR** : 🟢 #12 (squash-merged)
+
+### Phase 15 — Gemini-first migration + UI repos + timeout fixes ✅
+**1 PR · 2026-05-10**
+
+Triage prod après observation sur https://swissalytics.com/s/wingo-ch-xxx6 : 4 problèmes simultanés.
+
+- ✅ **15.A** UI HeadingsTab : bloc « ★ Suggestions SEO actionables · IA » déplacé de `entre Schema.org et top-3` → `juste avant <IssuesList>`. Lecture naturelle : signaux factuels → suggestions actionables → problèmes.
+- ✅ **15.B** Backend resilience : log du body Gemini sur HTTP non-ok (cause racine du 400 enfin diagnosticable). Timeouts élargis : `lighthouse 15→35s` (PageSpeed prend routinement 25-30s sur cache froid), `geo 5→25s` (analyzeGEOIndexation fait N appels LLM séquentiels).
+- ✅ **15.C** P14.D — migration Gemini-first : `gemini-2.5-flash` (gratuit) primaire avec `responseMimeType: 'application/json'`, fallback OpenAI `gpt-4o-mini`. Refacto `normalizeSuggestions()` partagé entre providers. Rationale localisé (FR/EN/DE/IT) selon page lang.
+
+**Tests** : +33 nouveaux (24 keyword-suggestions). Total : **344/344 ✅**
+
+**PR** : 🟢 #16 (squash-merged)
+
+### Phase 16 — Real integration health checks ✅
+**1 PR · 2026-05-10**
+
+Réponse au feedback « tu fais des tests qui ne testent que du vent » : les 24 tests P14/P15 mockaient fetch et passaient en vert pendant que la prod renvoyait `GEMINI_API_KEY=API_KEY_INVALID`. Mocks ne peuvent pas voir qu'une clé est mauvaise.
+
+- ✅ **16.A** Gemini : disable `thinkingConfig.thinkingBudget=0` pour récupérer le budget tokens (gemini-2.5-flash consomme 50-60 tokens de "thinking" avant l'output JSON, → MAX_TOKENS truncation).
+- ✅ **16.B** Schema.org : log clean `console.warn` one-liner au lieu de stack trace × 7 quand un site n'a pas de robots.txt/sitemap.
+- ✅ **16.C** `/api/health/integrations` : 6 checks réels (Gemini, OpenAI, Mistral, Anthropic, PageSpeed, MOZ). Classifie correctement Google `400 + API_KEY_INVALID` → `invalid_key` (pas `error`). Endpoint hit en post-deploy via `.github/workflows/deploy.yml` (soft-fail). 36 tests dont 5 LIVE opt-in qui appellent vraiment les APIs avec `.env.local` (`pnpm test:live`).
+
+**Tests** : +36 (31 mocked + 5 LIVE). Total : **375/375 ✅** (+ 5 LIVE skipped en CI)
+
+**PR** : 🟢 #17 (squash-merged)
+
+### Phase 17 — PageSpeed health timeout 60s ✅
+**1 PR · 2026-05-10 · 1 fichier**
+
+Le check PageSpeed timeout systématique à 6s alors que la clé est valide. Google PageSpeed Insights provisionne un browser headless Lighthouse (30-50s même sur example.com — vérifié par `time curl` sur le VPS : 9.7s mesuré).
+
+- ✅ **17.1** Timeout dédié PageSpeed à 60s (les autres providers gardent 6s — LLMs sont rapides, un timeout long masquerait une vraie panne).
+
+**Endpoint résultat** : `status: ok` overall, 5/5 OK + MOZ missing_key intentionnel.
+
+**PR** : 🟢 #18 (squash-merged)
+
+### Phase 18 — Tooltips LLM + endpoint séparé + loader inline ✅
+**1 PR · 2026-05-10**
+
+- ✅ **18.A** Tooltip "i" InfoBox sur chaque EngineCard (Claude, Gemini, ChatGPT, Mistral + 9 autres providers) avec description par LLM : modèle exact (gemini-2.5-flash, gpt-4o-mini), nature (entrainement vs web search direct), comment interpréter "indexé" vs "non indexé" pour CE provider spécifiquement. FR + EN avec fallback générique.
+- ✅ **18.B** `keyword-suggestions` extrait dans son endpoint dédié `/api/keyword-suggestions` (1 seul appel LLM, ~5-10s au lieu de 27s bundlé). Migration SQL versionnée (`supabase/migrations/20260510210000_add_keyword_suggestions_column.sql`) pour persister `keyword_suggestions JSONB` séparément. `mergeEnrichment` hoist legacy `geoAnalysis.keywordSuggestions` vers top-level (rétrocompat). Skeleton inline dans HeadingsTab avec animation pulse + texte « ⏳ L'IA analyse votre page pour vous formuler des mots-clés à cibler… ».
+
+**Tests** : +10 (fetchKeywordSuggestions, persist, merge legacy, repo column). Total : **386/386 ✅**
+
+**PR** : 🟢 #19 (squash-merged)
+
+### Phase 19 — Keywords + rationales dans la langue du user ✅
+**1 PR · 2026-05-11**
+
+Bug observé : sur enigma.swiss (site suisse réellement francophone mais qui déclare `<html lang="en-US">`), Gemini sortait des keywords ET rationales en anglais alors que le user navigue Swissalytics en FR. Confirmé par screenshot Google : la SERP indexe le site en français (« Enigma Swiss: Agence de Communication Genève »), donc le HTML lang ment.
+
+- ✅ **19.1** Nouveau prop optionnel `uiLang` dans `SuggestInput` (lang Swissalytics FR/EN). Quand présent : keywords + rationales tous deux dans uiLang. Quand absent : fallback sur page lang (rétrocompat). Le HTML lang reste surfacé au LLM comme HINT (« may be misdeclared ») mais ne dicte PAS la lang d'output.
+- ✅ **19.2** `fetchKeywordSuggestions(url, ctx, uiLang?)` : nouveau 3ème arg. `page.tsx` + `r/[id]/page.tsx` passent `lang` depuis `useTheme()`. `/api/keyword-suggestions` accepte `uiLang` dans le body.
+
+**Validation prod** : enigma.swiss avec `uiLang=fr` → suggestions 100% françaises (« agence marketing digital genève » + rationale FR).
+
+**Tests** : +5 dont l'enigma.swiss case (HTML=EN-US, uiLang=FR → output 100% FR). Total : **390/390 ✅**
+
+**PR** : 🟢 #20 (squash-merged)
 
 ---
 
 ## Estimation totale
-~**44 h** de travail réparties sur **9 PRs**.
+~**56 h** de travail réparties sur **15 PRs** (#2 → #20). Toutes mergées.
 
-## État actuel — contexte
-- **Branche actuelle** : `main` (feat/supabase-storage merged via PR #1, commit `d0f048c`)
+## État actuel — contexte (au 2026-05-11)
+- **Branche actuelle** : `main` — **toutes les phases P0→P19 mergées + déployées**
 - **Production** : https://swissalytics.com (systemd `swissalytics.service` sur VPS Infomaniak `91.214.191.103`)
-- **DB** : Supabase Postgres Zurich (eu-central-2)
-- **Env vars en prod** : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `IP_HASH_SALT`
-- **Env vars manquantes en prod** : `GOOGLE_PAGESPEED_API_KEY` + toutes les `*_API_KEY` LLM
-- **Bugs visibles aujourd'hui** :
-  - IA-Ready = 0/100 sur tous les rapports (bug aiReadyScore + indexation 0)
-  - Lighthouse en mode estimation (clé absente)
-  - CWV en mode estimation (bug double-nom env var)
-  - Recommandations GEO jetées (jamais affichées)
-  - Rapports partagés (`/s/<slug>`) affichent toujours `geoAnalysis = undefined`
+- **DB** : Supabase Postgres Zurich (eu-central-2). 16 colonnes (init + enrichment_columns + keyword_suggestions). 3 fichiers SQL versionnés dans `supabase/migrations/`.
+- **Env vars en prod** : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `IP_HASH_SALT`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_PAGESPEED_API_KEY`
+- **Env vars optionnelles non configurées** : `MOZ_API_KEY` (simulation backlinks à la place — `[E-E-A-T] MOZ_API_KEY non configuré - simulation backlinks`)
+- **Tests** : 390/390 passing + 5 LIVE skipped (`pnpm test:live` pour les exécuter avec les vraies APIs)
+- **Health endpoint** : `GET /api/health/integrations` → `status: ok` (5/5 providers configurés OK + MOZ missing_key intentionnel). Hit en post-deploy via `.github/workflows/deploy.yml`.
+
+### Bugs résolus (état du 2026-05-04 → état du 2026-05-11)
+- ✅ IA-Ready 0/100 → **résolu** (P0.1 aiReadyScore + P11/P12 clés LLM + clé Gemini fixée P16)
+- ✅ Lighthouse en mode estimation → **résolu** (clé en prod + P15.B/P17 timeouts + P7.5 client unifié)
+- ✅ CWV en mode estimation → **résolu** (P0.2 + P7.5 PageSpeed unifié)
+- ✅ Recommandations GEO jetées → **résolu** (P4 buildPlan absorbe `geoAnalysis.recommendations`)
+- ✅ Rapports partagés `geoAnalysis = undefined` → **résolu** (P5 `enrichment.ts` + persistEnrichment dans `/r/[id]` + `/s/[slug]`)
 
 ## Notes / blocages
-- (rien pour l'instant)
+- ✅ Aucun blocage. Projet **livré complet** au 2026-05-11.
+
+## Backlog open (non urgent)
+- **MOZ_API_KEY** : optionnel, marquerait les backlinks réels au lieu de la simulation. Pas critique.
+- **Rapports legacy** créés avant P19 : leurs `keywordSuggestions` persistées sont peut-être en EN si le HTML lang du site ment. Une nouvelle analyse de la même URL régénère en FR (rétrocompat OK via `mergeEnrichment` hoist).
+- **Tests E2E navigateur** : actuellement absents (pas de Playwright). À envisager si churn UI s'accélère.
