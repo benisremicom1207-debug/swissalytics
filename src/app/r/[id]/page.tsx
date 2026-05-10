@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Shell from '@/components/design-system/Shell';
 import ReportView from '@/components/report/ReportView';
 import { useTheme } from '@/components/design-system/ThemeProvider';
-import { fetchGeo, fetchCwv, persistEnrichment, buildPageContext } from '@/lib/client/enrichment';
+import { fetchGeo, fetchCwv, fetchKeywordSuggestions, persistEnrichment, buildPageContext } from '@/lib/client/enrichment';
 import { calculateGlobalScore } from '@/lib/analyzer/score';
 import type { AnalysisResult } from '@/lib/types';
 
@@ -25,6 +25,8 @@ export default function ReportPage({
   const isFr = lang === 'fr';
 
   const [state, setState] = useState<FetchState>({ status: 'loading' });
+  // P18.B — separate loader so HeadingsTab shows the « Suggestions IA en cours » skeleton
+  const [keywordSuggestionsLoading, setKeywordSuggestionsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,6 +71,24 @@ export default function ReportPage({
             );
             persistEnrichment(id, { geoAnalysis: geo });
           });
+        }
+
+        // P18.B — fetch keyword suggestions if missing in stored report.
+        if (!r.keywordSuggestions) {
+          setKeywordSuggestionsLoading(true);
+          fetchKeywordSuggestions(r.url, buildPageContext(r))
+            .then((ks) => {
+              if (cancelled || !ks) return;
+              setState((s) =>
+                s.status === 'ok'
+                  ? { status: 'ok', report: { ...s.report, keywordSuggestions: ks } }
+                  : s,
+              );
+              persistEnrichment(id, { keywordSuggestions: ks });
+            })
+            .finally(() => {
+              if (!cancelled) setKeywordSuggestionsLoading(false);
+            });
         }
 
         if (!cwvOk) {
@@ -248,7 +268,7 @@ export default function ReportPage({
 
   return (
     <Shell>
-      <ReportView report={state.report} reportId={id} />
+      <ReportView report={state.report} reportId={id} keywordSuggestionsLoading={keywordSuggestionsLoading} />
     </Shell>
   );
 }

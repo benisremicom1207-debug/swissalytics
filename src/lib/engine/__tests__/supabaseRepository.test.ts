@@ -78,6 +78,7 @@ describe('rowToStored', () => {
       referrer: 'https://google.com/',
       geo_analysis: null,
       cwv: null,
+      keyword_suggestions: null,
     };
     const stored = rowToStored(row);
     expect(stored.id).toBe('pixelab-ch-a8x4');
@@ -93,7 +94,7 @@ describe('rowToStored', () => {
       crawl_ms: 0, share_token: null, share_expires_at: null,
       data: {},
       ip_hash: null, country: null, user_agent: null, referrer: null,
-      geo_analysis: null, cwv: null,
+      geo_analysis: null, cwv: null, keyword_suggestions: null,
     };
     const stored = rowToStored(row);
     expect(stored.shareToken).toBeNull();
@@ -112,10 +113,24 @@ describe('rowToStored', () => {
       crawl_ms: 0, share_token: null, share_expires_at: null,
       data: {},
       ip_hash: null, country: null, user_agent: null, referrer: null,
-      geo_analysis: geo, cwv,
+      geo_analysis: geo, cwv, keyword_suggestions: null,
     };
     const stored = rowToStored(row);
     expect(stored.geoAnalysis).toEqual(geo);
     expect(stored.cwv).toEqual(cwv);
+  });
+
+  it('passes through keyword_suggestions when present (P18.B)', () => {
+    const ks = { suggestions: [{ keyword: 'k', rationale: 'r' }], model: 'gemini-2.5-flash' };
+    const row = {
+      id: 'x', url: 'u', lang: 'fr' as const, score: 0,
+      created_at: '2026-05-03T12:00:00.000Z',
+      crawl_ms: 0, share_token: null, share_expires_at: null,
+      data: {},
+      ip_hash: null, country: null, user_agent: null, referrer: null,
+      geo_analysis: null, cwv: null, keyword_suggestions: ks,
+    };
+    const stored = rowToStored(row);
+    expect(stored.keywordSuggestions).toEqual(ks);
   });
 });

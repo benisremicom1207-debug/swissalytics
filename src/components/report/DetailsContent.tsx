@@ -20,6 +20,8 @@ export type DetailsSectionKey =
 interface DetailsContentProps {
   report: AnalysisResult;
   cwvLoading?: boolean;
+  /** P18.B — passed through to HeadingsTab to render the inline skeleton. */
+  keywordSuggestionsLoading?: boolean;
   section: DetailsSectionKey;
   setSection: (s: DetailsSectionKey) => void;
   sectionDefs: Array<{ key: DetailsSectionKey; num: string; label: string }>;
@@ -80,6 +82,7 @@ function SectionNavEntry({
 export function DetailsContent({
   report,
   cwvLoading,
+  keywordSuggestionsLoading,
   section,
   setSection,
   sectionDefs,
@@ -122,7 +125,8 @@ export function DetailsContent({
             keywords={report.keywords}
             url={report.url}
             spa={report.spa}
-            keywordSuggestions={report.geoAnalysis?.keywordSuggestions}
+            keywordSuggestions={report.keywordSuggestions}
+            keywordSuggestionsLoading={keywordSuggestionsLoading}
           />
         );
       case 'images':

@@ -9,6 +9,133 @@ import type {
 } from '@/lib/analyzers/types';
 import SpaWarning from './SpaWarning';
 import GeoDegradedBanner from './GeoDegradedBanner';
+import InfoBox from '../InfoBox';
+
+/**
+ * P18.A — descriptions par LLM affichées dans le tooltip "i" sur chaque
+ * EngineCard. Explique au lecteur ce que chaque moteur fait, le modèle
+ * utilisé et comment interpréter "indexé" vs "non indexé" pour ce
+ * provider en particulier (les sémantiques diffèrent : Gemini a un
+ * accès web direct, Claude répond depuis son entraînement statique…).
+ */
+const LLM_DESCRIPTIONS_FR: Record<string, { term: string; definition: string }> = {
+  gemini: {
+    term: 'Gemini (Google) · gemini-2.5-flash',
+    definition: "Le moteur conversationnel de Google, intégré au Google Search index. « Indexé » = Gemini connaît votre marque et la mentionne dans sa réponse. « Non indexé » = Gemini ne la mentionne pas — soit elle est absente du corpus, soit Gemini choisit d'autres concurrents. Couverture FR/CH : très bonne.",
+  },
+  chatgpt: {
+    term: 'ChatGPT (OpenAI) · gpt-4o-mini',
+    definition: "Le modèle d'OpenAI utilisé pour le test. Mix d'entraînement statique (cutoff fin 2024) et de web search variable selon la requête. « Indexé » = mentionné dans la réponse texte. Le score est généralement plus permissif que Gemini.",
+  },
+  claude: {
+    term: 'Claude (Anthropic) · claude-haiku-4.5',
+    definition: "Le modèle d'Anthropic. Pas d'index web direct — répond depuis son entraînement (cutoff variable selon le modèle). « Non indexé » signifie souvent « marque trop locale ou trop récente pour être dans le corpus », pas « absente du web ».",
+  },
+  mistral: {
+    term: 'Mistral (Mistral AI) · mistral-small-latest',
+    definition: "Le modèle européen — entraînement large avec biais francophone et européen marqué. Bonne couverture des marques suisses et françaises. « Mentions élevées » avec Mistral signale une bonne empreinte FR/CH.",
+  },
+  perplexity: {
+    term: 'Perplexity',
+    definition: "Moteur de recherche conversationnel qui synthétise les résultats web en temps réel. « Indexé » signifie que Perplexity cite votre site dans ses sources lorsqu'on cherche votre marque.",
+  },
+  grok: {
+    term: 'Grok (xAI)',
+    definition: "Le modèle conversationnel de xAI, intégré à X/Twitter. Couverture orientée actualité et données temps réel.",
+  },
+  deepseek: {
+    term: 'DeepSeek',
+    definition: "Modèle open-weights chinois. Couverture asiatique forte ; couverture européenne plus variable.",
+  },
+  qwen: {
+    term: 'Qwen (Alibaba)',
+    definition: "Modèle d'Alibaba, focus asiatique. Pertinent surtout pour les marques actives sur les marchés asiatiques.",
+  },
+  'baidu-ernie': {
+    term: 'ERNIE (Baidu)',
+    definition: "Le moteur chinois Baidu. Indexation pertinente pour les marques visant le marché chinois ou les diasporas asiatiques.",
+  },
+  'naver-clova': {
+    term: 'Clova (Naver)',
+    definition: "Moteur sud-coréen. Pertinent pour les marques actives en Corée du Sud.",
+  },
+  'bing-copilot': {
+    term: 'Copilot (Microsoft Bing)',
+    definition: "Moteur conversationnel de Microsoft basé sur GPT-4 et l'index Bing. Bonne couverture occidentale.",
+  },
+  kagi: {
+    term: 'Kagi',
+    definition: "Moteur de recherche payant et axé sur la confidentialité. Audience plus restreinte mais qualifiée.",
+  },
+  you: {
+    term: 'You.com',
+    definition: "Moteur conversationnel américain combinant LLM et web search.",
+  },
+};
+const LLM_DESCRIPTIONS_EN: Record<string, { term: string; definition: string }> = {
+  gemini: {
+    term: 'Gemini (Google) · gemini-2.5-flash',
+    definition: "Google's conversational engine, plugged into the Google Search index. \"Indexed\" = Gemini knows your brand and mentions it in its answer. \"Not indexed\" = Gemini doesn't mention it — either it's missing from the corpus, or Gemini prefers other competitors. FR/CH coverage: very good.",
+  },
+  chatgpt: {
+    term: 'ChatGPT (OpenAI) · gpt-4o-mini',
+    definition: "OpenAI's model used for the test. Mix of static training (cutoff late 2024) and variable web search. \"Indexed\" = mentioned in the text answer. Generally more permissive than Gemini.",
+  },
+  claude: {
+    term: 'Claude (Anthropic) · claude-haiku-4.5',
+    definition: "Anthropic's model. No direct web index — answers from training data (cutoff varies). \"Not indexed\" often means \"brand too local or too recent to be in the corpus\", not \"absent from the web\".",
+  },
+  mistral: {
+    term: 'Mistral (Mistral AI) · mistral-small-latest',
+    definition: "European model — broad training with strong French and European bias. Good coverage of Swiss and French brands. High \"mentions\" with Mistral signals a strong FR/CH footprint.",
+  },
+  perplexity: {
+    term: 'Perplexity',
+    definition: "Conversational search engine that synthesizes live web results. \"Indexed\" means Perplexity cites your site in its sources when searching for your brand.",
+  },
+  grok: {
+    term: 'Grok (xAI)',
+    definition: "xAI's conversational model, integrated with X/Twitter. Coverage oriented toward news and real-time data.",
+  },
+  deepseek: {
+    term: 'DeepSeek',
+    definition: "Open-weights Chinese model. Strong Asian coverage; European coverage more variable.",
+  },
+  qwen: {
+    term: 'Qwen (Alibaba)',
+    definition: "Alibaba's model, Asian focus. Most relevant for brands active in Asian markets.",
+  },
+  'baidu-ernie': {
+    term: 'ERNIE (Baidu)',
+    definition: "Chinese Baidu engine. Indexation relevant for brands targeting the Chinese market or Asian diasporas.",
+  },
+  'naver-clova': {
+    term: 'Clova (Naver)',
+    definition: "South Korean engine. Relevant for brands active in South Korea.",
+  },
+  'bing-copilot': {
+    term: 'Copilot (Microsoft Bing)',
+    definition: "Microsoft's conversational engine based on GPT-4 and the Bing index. Good Western coverage.",
+  },
+  kagi: {
+    term: 'Kagi',
+    definition: "Paid, privacy-focused search engine. Smaller but qualified audience.",
+  },
+  you: {
+    term: 'You.com',
+    definition: "American conversational engine combining LLM and web search.",
+  },
+};
+
+function llmDescription(id: string, isFr: boolean): { term: string; definition: string } {
+  const map = isFr ? LLM_DESCRIPTIONS_FR : LLM_DESCRIPTIONS_EN;
+  return map[id] ?? {
+    term: id,
+    definition: isFr
+      ? "Moteur LLM testé pour l'indexation. Aucune description détaillée disponible."
+      : "LLM engine tested for indexation. No detailed description available.",
+  };
+}
 
 /**
  * GeoTabContent — 4ᵉ onglet "Indexation IA / GEO".
@@ -272,16 +399,23 @@ function EngineCard({
         minHeight: 120,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div
-          style={{
-            fontSize: 16,
-            fontWeight: 700,
-            color: 'var(--sa-ink)',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {displayName}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+          <span
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: 'var(--sa-ink)',
+              letterSpacing: '-0.01em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {displayName}
+          </span>
+          {/* P18.A — info tooltip per LLM (model + indexation semantics) */}
+          <InfoBox items={[llmDescription(id, isFr)]} />
         </div>
         <span
           aria-label={badgeLabel}

@@ -66,10 +66,13 @@ export interface StoredReport {
   referrer?: string | null;
 
   // Enrichissement asynchrone (Phase 2) — populé via PATCH .../enrich
-  // après les fetches /api/geo-analyze et /api/analyze/cwv. Null tant que
-  // l'enrichissement n'a pas été persisté.
+  // après les fetches /api/geo-analyze, /api/analyze/cwv et
+  // /api/keyword-suggestions (P18.B). Null tant que l'enrichissement
+  // n'a pas été persisté.
   geoAnalysis?: GeoAnalysisResult | null;
   cwv?: CwvEnrichment | null;
+  /** P18.B — top-level so it can be persisted independently of geoAnalysis. */
+  keywordSuggestions?: import('@/lib/analyzers/keyword-suggestions').KeywordSuggestionsResult | null;
 }
 
 /** Minimal meta for list/recent queries */

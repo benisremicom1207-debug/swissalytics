@@ -121,7 +121,7 @@ function CheckPill({ label, ok, abbreviated }: { label: string; ok: boolean; abb
 
 /* ---------------- main tab ---------------- */
 
-export default function HeadingsTab({ data, keywords, url, spa, keywordSuggestions }: { data: HeadingsAnalysis; keywords?: KeywordsAnalysis; url?: string; spa?: SpaDetection; keywordSuggestions?: KeywordSuggestionsResult }) {
+export default function HeadingsTab({ data, keywords, url, spa, keywordSuggestions, keywordSuggestionsLoading }: { data: HeadingsAnalysis; keywords?: KeywordsAnalysis; url?: string; spa?: SpaDetection; keywordSuggestions?: KeywordSuggestionsResult; keywordSuggestionsLoading?: boolean }) {
   const [showAllHeadings, setShowAllHeadings] = useState(false);
 
   const headingGroups = [
@@ -354,11 +354,11 @@ export default function HeadingsTab({ data, keywords, url, spa, keywordSuggestio
           </section>
         )}
 
-        {/* P14.D — LLM suggestions (what page SHOULD target). Placed
-            here, just above the Issues block, so the user reads them
-            after seeing the actual current state — and treats them as
-            actionable next steps rather than a prediction. */}
-        {keywordSuggestions && keywordSuggestions.suggestions.length > 0 && (
+        {/* P14.D / P18.B — LLM suggestions, with inline loader skeleton.
+            Placed here, just above the Issues block, so the user reads
+            them after seeing the actual current state — and treats them
+            as actionable next steps rather than a prediction. */}
+        {keywordSuggestions && keywordSuggestions.suggestions.length > 0 ? (
           <section style={{ marginBottom: 20 }}>
             <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 12 }}>
               ★ Suggestions SEO actionables · IA
@@ -384,7 +384,34 @@ export default function HeadingsTab({ data, keywords, url, spa, keywordSuggestio
               Généré par {keywordSuggestions.model}.
             </div>
           </section>
-        )}
+        ) : keywordSuggestionsLoading ? (
+          <section style={{ marginBottom: 20 }} aria-busy="true" aria-live="polite">
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 12 }}>
+              ★ Suggestions SEO actionables · IA
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ padding: 14, border: '2px dashed var(--sa-red)', background: 'rgba(229, 36, 26, 0.02)', minHeight: 110 }}>
+                  <div className="mono" style={{ fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--sa-red)', fontWeight: 700, marginBottom: 6 }}>
+                    Suggestion {i}
+                  </div>
+                  <div style={{ height: 18, background: 'rgba(229, 36, 26, 0.08)', marginBottom: 10, animation: 'sa-pulse 1.4s ease-in-out infinite' }} />
+                  <div style={{ height: 8, width: '85%', background: 'rgba(229, 36, 26, 0.06)', marginBottom: 6, animation: 'sa-pulse 1.4s ease-in-out infinite 0.2s' }} />
+                  <div style={{ height: 8, width: '60%', background: 'rgba(229, 36, 26, 0.06)', animation: 'sa-pulse 1.4s ease-in-out infinite 0.4s' }} />
+                </div>
+              ))}
+            </div>
+            <div className="mono" style={{ fontSize: 10, letterSpacing: '0.08em', color: 'var(--sa-ink-3)', marginTop: 8, fontStyle: 'italic' }}>
+              ⏳ L&apos;IA analyse votre page pour vous formuler des mots-clés à cibler…
+            </div>
+            <style>{`
+              @keyframes sa-pulse {
+                0%, 100% { opacity: 0.4; }
+                50%      { opacity: 0.9; }
+              }
+            `}</style>
+          </section>
+        ) : null}
 
         {/* §04 — Issues */}
         <IssuesList issues={data.issues} />

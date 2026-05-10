@@ -16,7 +16,19 @@ export function mergeEnrichment(stored: StoredReport): AnalysisReport {
   let report = stored.data;
 
   if (stored.geoAnalysis) {
+    // P18.B backwards-compat: legacy stored reports kept keywordSuggestions
+    // INSIDE geoAnalysis. Hoist to top-level if present so the new UI
+    // (which reads report.keywordSuggestions) keeps showing them.
+    const legacy = (stored.geoAnalysis as { keywordSuggestions?: unknown }).keywordSuggestions;
     report = { ...report, geoAnalysis: stored.geoAnalysis };
+    if (legacy && !stored.keywordSuggestions) {
+      report = { ...report, keywordSuggestions: legacy as AnalysisReport['keywordSuggestions'] };
+    }
+  }
+
+  // P18.B — top-level keywordSuggestions wins over the legacy nested one.
+  if (stored.keywordSuggestions) {
+    report = { ...report, keywordSuggestions: stored.keywordSuggestions };
   }
 
   const cwv = stored.cwv;
