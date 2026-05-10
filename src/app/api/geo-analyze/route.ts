@@ -23,15 +23,25 @@ import type { SchemaKeywords } from '@/lib/analyzer/schema-keywords';
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
 
 /**
- * Per-analyzer timeouts (P8.2). Lighthouse calls Google PageSpeed (or
- * an internal estimator) which is the slowest step — give it 15s.
- * The other 4 analyzers are local cheerio + cheap fetches, 5s is
- * generous.
+ * Per-analyzer timeouts (P8.2 → P15 tuning). Lighthouse calls Google
+ * PageSpeed which routinely takes 20-30s on a cold cache (esp. mobile
+ * + opaque sites) — 15s was clipping legit responses, leading to
+ * systematic "lighthouse timeout" degraded flags in prod. The
+ * PAGESPEED_TIMEOUT_MS in the client is 30s, so we align the wrapper
+ * at 35s (5s slack for our own overhead).
+ *
+ * GEO indexation fires N LLM API calls (Gemini, ChatGPT, Claude, …)
+ * sequentially per registry order; each can take 5-10s on its own.
+ * 5s was killing the whole tile before any provider could answer —
+ * 25s gives breathing room for 2-3 LLMs to respond.
+ *
+ * SEO / schema / eeat stay short — they're local cheerio + cheap
+ * fetches; if they take >5s something is wrong with the target site.
  */
 const TIMEOUTS = {
-  lighthouse: 15_000,
+  lighthouse: 35_000,
   seo: 5_000,
-  geo: 5_000,
+  geo: 25_000,
   schema: 5_000,
   eeat: 5_000,
 } as const;

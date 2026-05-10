@@ -68,7 +68,11 @@ export class GeminiProvider implements LLMProvider {
       );
 
       if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+        // Surface the response body so a 400/403/404 actually tells us
+        // WHY (deprecated model, invalid key, malformed payload, …)
+        // instead of just dropping a status code into the logs.
+        const errBody = await response.text().catch(() => '');
+        throw new Error(`Gemini API error: ${response.status} ${response.statusText} — ${errBody.slice(0, 300)}`);
       }
 
       const data = await response.json();
