@@ -35,7 +35,21 @@ export interface KeywordSuggestionsResult {
 
 interface SuggestInput {
   url: string;
+  /**
+   * Language of the analyzed PAGE (from `<html lang="...">`). Drives the
+   * keywords themselves — an English-language site needs English-language
+   * keywords; mixing languages tanks SEO.
+   */
   lang: string;
+  /**
+   * P19 — Language of the Swissalytics UI ("fr" or "en"), passed by the
+   * client from useTheme(). Drives the rationales (the explanation we
+   * surface back to the user). Different from `lang` because a French
+   * Swissalytics user analyzing an English page wants to read explanations
+   * in French even though the keywords stay in English.
+   * Falls back to `lang` when omitted (preserves pre-P19 behavior).
+   */
+  uiLang?: string;
   title?: string;
   metaDescription?: string;
   h1?: string;
@@ -58,7 +72,17 @@ function languageName(lang: string): 'French' | 'English' | 'German' | 'Italian'
 }
 
 function buildPrompt(input: SuggestInput): string {
-  const lang = languageName(input.lang);
+  // P19 — both keywords and rationales follow the Swissalytics UI language
+  // (the user's target market), NOT the HTML lang attribute of the analyzed
+  // page. Reason: HTML lang is often wrong (e.g. enigma.swiss declares
+  // en-US but Google indexes it in French because the actual content + SERP
+  // are French). Trusting the user's choice (« je suis sur Swissalytics FR
+  // donc je vise le marché FR ») is more reliable than trusting the HTML.
+  // The HTML lang is still surfaced to the LLM as context (so it can flag
+  // mismatches) but does not dictate the output language.
+  const outputLang = languageName(input.uiLang ?? input.lang);
+  const pageLangHint = languageName(input.lang);
+  const langMatches = outputLang === pageLangHint;
 
   const schemaContext = input.schemaKeywords?.found
     ? [
@@ -76,7 +100,9 @@ function buildPrompt(input: SuggestInput): string {
     `You are a senior SEO consultant. Suggest 3 SEO keywords this page SHOULD target.`,
     ``,
     `URL: ${input.url}`,
-    `Page language: ${lang}`,
+    langMatches
+      ? `Page language: ${pageLangHint}`
+      : `HTML lang attribute: ${pageLangHint} (FYI — but this may be misdeclared; the Swissalytics user is targeting the ${outputLang} market, treat that as the source of truth)`,
     `Title: ${input.title ?? '(missing)'}`,
     `Meta description: ${input.metaDescription ?? '(missing)'}`,
     `H1: ${input.h1 ?? '(missing)'}`,
@@ -88,8 +114,9 @@ function buildPrompt(input: SuggestInput): string {
     `- Match commercial / transactional intent (what users actually search to BUY or compare).`,
     `- Localize: if Swiss site, prefer "suisse"/"swiss" anchored variants like "abonnement internet suisse".`,
     `- Naturally phrased — must read like a real search query, not keyword stuffing.`,
-    `- Write the suggestions IN THE PAGE LANGUAGE (${lang}).`,
-    `- Write the rationale IN THE PAGE LANGUAGE (${lang}) too — never in another language.`,
+    `- KEYWORDS must be written IN ${outputLang.toUpperCase()} — that's the user's target market.`,
+    `- RATIONALES must be written IN ${outputLang.toUpperCase()} too — that's the language the Swissalytics user reads.`,
+    `  Output is 100% ${outputLang}. NEVER mix languages.`,
     `- Each rationale: max 20 words. Concise, concrete, no marketing fluff.`,
     ``,
     `Return ONLY valid JSON, no prose, no markdown:`,
