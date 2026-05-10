@@ -12,7 +12,32 @@
  */
 
 import type { GeoAnalysisResult } from '@/lib/analyzers/types';
-import type { CwvMetrics, Issue } from '@/lib/types';
+import type { CwvMetrics, Issue, AnalysisResult } from '@/lib/types';
+import type { SchemaKeywords } from '@/lib/analyzer/schema-keywords';
+
+/**
+ * Page context passed to /api/geo-analyze so the keyword-suggestions
+ * LLM call can use real page signals without re-fetching the HTML.
+ * Built from the AnalysisResult by `buildPageContext()`.
+ */
+export interface PageContext {
+  lang?: string;
+  title?: string;
+  metaDescription?: string;
+  h1?: string;
+  schemaKeywords?: SchemaKeywords;
+}
+
+/** Derive PageContext from a loaded AnalysisResult (P14.D). */
+export function buildPageContext(report: AnalysisResult): PageContext {
+  return {
+    lang: report.technical?.lang ?? undefined,
+    title: report.headings?.title?.content || undefined,
+    metaDescription: report.headings?.metaDescription?.content || undefined,
+    h1: report.headings?.h1?.[0] || undefined,
+    schemaKeywords: report.keywords?.schemaKeywords,
+  };
+}
 
 export interface CwvEnrichmentData {
   coreWebVitals: { mobile: CwvMetrics | null; desktop: CwvMetrics | null };
@@ -40,12 +65,15 @@ export function persistEnrichment(
  * Trigger /api/geo-analyze for `url` and return the result, or null on
  * any failure (HTTP non-2xx, network error, malformed JSON).
  */
-export async function fetchGeo(url: string): Promise<GeoAnalysisResult | null> {
+export async function fetchGeo(
+  url: string,
+  pageContext?: PageContext,
+): Promise<GeoAnalysisResult | null> {
   try {
     const res = await fetch('/api/geo-analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, pageContext }),
     });
     if (!res.ok) return null;
     return (await res.json()) as GeoAnalysisResult;

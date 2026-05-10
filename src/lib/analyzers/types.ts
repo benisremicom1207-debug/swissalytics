@@ -155,4 +155,10 @@ export interface GeoAnalysisResult {
    * Absent when all 5 analyzers succeeded.
    */
   degraded?: GeoAnalysisDegradedFlags;
+  /**
+   * P14.D — LLM-suggested SEO keywords (gpt-4o-mini). Surfaced in
+   * HeadingsTab next to the statistical extraction. Absent when the
+   * LLM call failed, OPENAI_API_KEY missing, or response malformed.
+   */
+  keywordSuggestions?: import('./keyword-suggestions').KeywordSuggestionsResult;
 }

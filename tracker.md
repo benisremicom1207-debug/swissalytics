@@ -184,6 +184,19 @@ Vérifié : `lighthouse.performance` retourne du score réel (pas estimé). Voir
 
 **PR** : 🟡 #13 (en cours d'ouverture)
 
+### Phase 14 — Schema-first keyword extraction + LLM SEO suggestions ✅
+**1 PR · 2026-05-10**
+
+Statistical extraction (P9 + P13) est descriptif (ce qui EST sur la page). P14 ajoute le prescriptif (ce que la page DEVRAIT viser) via 2 sources complémentaires.
+
+- ✅ **14.A — Schema.org-first** : nouveau `src/lib/analyzer/schema-keywords.ts` qui parse les blocks JSON-LD (Service, Product, Article, Organization, WebSite, LocalBusiness…) pour extraire `canonicalName` + `canonicalDescription` + `category` + `keywords` + `brand`. Ajouté à `KeywordsAnalysis.schemaKeywords`. Affiché en chip group dans HeadingsTab "§ Annoncés via Schema.org".
+- ✅ **14.D — LLM suggestions** : nouveau `src/lib/analyzers/keyword-suggestions.ts` qui appelle gpt-4o-mini avec page context (title + meta + h1 + schemaKeywords) et demande "3 mots-clés SEO actionnables". Coût réel ~$0.0002/call. Intégré comme 6ᵉ tâche allSettled dans `/api/geo-analyze`. Affiché dans HeadingsTab "★ Suggestions SEO actionnables · IA" (cartes rouges 2px, distinct des targets statistiques).
+- ✅ **Frontend** : nouveau helper `buildPageContext(report)` dans `enrichment.ts`. `fetchGeo` accepte un 2ᵉ argument `pageContext`. Page.tsx + r/[id]/page.tsx passent le contexte automatiquement.
+
+**Tests** : +26 nouveaux (15 schema-keywords + 11 keyword-suggestions). Total : **311/311 ✅**
+
+**PR** : 🟡 #15 (en cours d'ouverture)
+
 ### Phase 13 — Multi-keyword targets (top 3) ☐
 **Bundlée dans la PR #9 · 2026-05-09**
 

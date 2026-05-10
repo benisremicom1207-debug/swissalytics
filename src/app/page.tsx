@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import type { AnalysisResult } from '@/lib/types';
 import { calculateGlobalScore } from '@/lib/analyzer/score';
-import { fetchGeo, fetchCwv, persistEnrichment } from '@/lib/client/enrichment';
+import { fetchGeo, fetchCwv, persistEnrichment, buildPageContext } from '@/lib/client/enrichment';
 import AnalyzerHero from '@/components/AnalyzerHero';
 import AnalyzerLoading from '@/components/AnalyzerLoading';
 import ReportView from '@/components/report/ReportView';
@@ -97,7 +97,7 @@ export default function HomePage() {
       setDegraded(Boolean(data.degraded));
       setCwvLoading(true);
 
-      fetchGeo(validatedUrl).then((geoData) => {
+      fetchGeo(validatedUrl, buildPageContext(report)).then((geoData) => {
         if (!geoData) return;
         setResult((prev) => (prev ? { ...prev, geoAnalysis: geoData } : prev));
         if (id) persistEnrichment(id, { geoAnalysis: geoData });

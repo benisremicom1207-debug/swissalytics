@@ -122,6 +122,7 @@ export function DetailsContent({
             keywords={report.keywords}
             url={report.url}
             spa={report.spa}
+            keywordSuggestions={report.geoAnalysis?.keywordSuggestions}
           />
         );
       case 'images':
