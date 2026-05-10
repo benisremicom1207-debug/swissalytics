@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Shell from '@/components/design-system/Shell';
 import ReportView from '@/components/report/ReportView';
 import { useTheme } from '@/components/design-system/ThemeProvider';
-import { fetchGeo, fetchCwv, persistEnrichment } from '@/lib/client/enrichment';
+import { fetchGeo, fetchCwv, persistEnrichment, buildPageContext } from '@/lib/client/enrichment';
 import { calculateGlobalScore } from '@/lib/analyzer/score';
 import type { AnalysisResult } from '@/lib/types';
 
@@ -60,7 +60,7 @@ export default function ReportPage({
           r.technical?.coreWebVitals?.desktop;
 
         if (!r.geoAnalysis) {
-          fetchGeo(r.url).then((geo) => {
+          fetchGeo(r.url, buildPageContext(r)).then((geo) => {
             if (cancelled || !geo) return;
             setState((s) =>
               s.status === 'ok'

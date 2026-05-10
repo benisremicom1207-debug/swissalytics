@@ -53,6 +53,13 @@ export interface KeywordsAnalysis {
    * Empty when placement is null (no keywords detected at all).
    */
   targets: KeywordTarget[];
+  /**
+   * Schema.org-derived keyword signals (P14.A) — what the SITE itself
+   * declares it's about, separate from the statistical n-gram extraction.
+   * `found: false` when no Service/Product/Article/etc. JSON-LD was
+   * detected; UI should fall back to displaying only `targets` in that case.
+   */
+  schemaKeywords?: import('./analyzer/schema-keywords').SchemaKeywords;
   issues: Issue[];
 }
 

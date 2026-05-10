@@ -6,6 +6,7 @@ import type {
   KeywordTarget,
   Issue,
 } from '../types';
+import { extractSchemaKeywords } from './schema-keywords';
 
 // Multi-language stop words covering the 4 official Swiss languages
 // (FR, EN, DE, IT) + code/JS noise. Pronouns are exhaustively covered
@@ -333,10 +334,11 @@ function extractKeywords($: CheerioAPI, brandVariants: Set<string>): KeywordInfo
 export function analyzeKeywords($: CheerioAPI, url?: string): KeywordsAnalysis {
   const brandVariants = getBrandVariants(url);
   const keywords = extractKeywords($, brandVariants);
+  const schemaKeywords = extractSchemaKeywords($); // P14.A
   const issues: Issue[] = [];
 
   if (keywords.length === 0) {
-    return { keywords, placement: null, targets: [], issues };
+    return { keywords, placement: null, targets: [], schemaKeywords, issues };
   }
 
   const primary = keywords[0].word;
@@ -433,5 +435,5 @@ export function analyzeKeywords($: CheerioAPI, url?: string): KeywordsAnalysis {
     ...checkPlacement(kw.word, placementTexts),
   }));
 
-  return { keywords, placement, targets, issues };
+  return { keywords, placement, targets, schemaKeywords, issues };
 }
