@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import type { TechnicalAnalysis } from '@/lib/types';
-import { CheckCircle2, Layout, Code2, FileCode, Gauge, Lock, Accessibility, Link as LinkIcon, Wifi, Shield, Smartphone, Monitor, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import {
+  groupTechsByCategory,
+  CATEGORY_LABELS,
+  type TechCategory,
+} from '@/lib/analyzer/tech-categories';
 import IssuesList from '../IssuesList';
 import CTABanner from '../CTABanner';
 import InfoBox from '../InfoBox';
-
-const getScoreColor = (score: number) => {
-  if (score >= 80) return 'text-status-success';
-  if (score >= 60) return 'text-status-warning';
-  return 'text-status-error';
-};
+import { SectionHeader, CheckPill, MonoCard, TabFrame } from './_v2';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -19,546 +19,546 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+function metricColor(value: number, good: number, poor: number): string {
+  return value <= good ? 'var(--sa-ok)' : value <= poor ? 'var(--sa-warn)' : 'var(--sa-red)';
+}
+
+function scoreColor(score: number): string {
+  if (score >= 80) return 'var(--sa-ok)';
+  if (score >= 60) return 'var(--sa-warn)';
+  return 'var(--sa-red)';
+}
+
+const CATEGORY_DOT: Record<TechCategory, string> = {
+  framework: 'var(--sa-ink)',
+  library: 'var(--sa-ink-3)',
+  analytics: 'var(--sa-warn)',
+  embed: 'var(--sa-red)',
+  other: 'var(--sa-ink-4)',
+};
+
 export default function TechnicalTab({ data, cwvLoading }: { data: TechnicalAnalysis; cwvLoading?: boolean }) {
   const [showRobots, setShowRobots] = useState(false);
   const [showCssJs, setShowCssJs] = useState(false);
   const [cwvStrategy, setCwvStrategy] = useState<'mobile' | 'desktop'>('mobile');
   const cwvData = data.coreWebVitals?.[cwvStrategy] ?? null;
+  const hasCwv = data.coreWebVitals && (data.coreWebVitals.mobile || data.coreWebVitals.desktop);
 
   const htmlPercent = Math.min(100, (data.htmlSize / (2 * 1024 * 1024)) * 100);
   const htmlOk = data.htmlSize < 2 * 1024 * 1024;
+  const htmlColor = htmlOk ? 'var(--sa-ok)' : 'var(--sa-red)';
+
+  const techGroups = groupTechsByCategory(data.technologies);
 
   return (
-    <div className="bg-surface-secondary border border-border-primary rounded-2xl p-6 md:p-8">
-      <div className="space-y-10">
-
-        {/* 1. Status checks */}
-        <div>
-          <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-            <Layout className="text-text-tertiary" />
-            Analyse technique
+    <TabFrame>
+      {/* §01 — Indexabilité (robots.txt, sitemap, llms.txt, https) */}
+      <section>
+        <SectionHeader
+          num="01"
+          title="Indexabilité & sécurité"
+          info={
             <InfoBox
               items={[
-                { term: 'robots.txt', definition: 'Un fichier à la racine de votre site qui indique aux moteurs de recherche quelles pages explorer ou ignorer. Son absence n\'est pas bloquante mais sa présence permet un contrôle précis du crawl.' },
-                { term: 'Sitemap XML', definition: 'Un fichier qui liste toutes les pages importantes de votre site. Il aide Google à découvrir vos pages plus rapidement, surtout pour les grands sites ou ceux avec peu de liens internes.' },
-                { term: 'llms.txt', definition: 'Un fichier émergent qui aide les IA (ChatGPT, Perplexity, etc.) à comprendre votre site. C\'est l\'équivalent du robots.txt pour les moteurs de recherche IA — un avantage compétitif en GEO (Generative Engine Optimization).' },
-                { term: 'Core Web Vitals', definition: 'Métriques de performance mesurées par Google : LCP (vitesse d\'affichage du contenu principal), CLS (stabilité visuelle), TBT (réactivité). Ils influencent directement votre classement Google.' },
-                { term: 'LCP (Largest Contentful Paint)', definition: 'Le temps nécessaire pour afficher le plus grand élément visible (image, titre, etc.). Objectif : moins de 2,5 secondes.' },
-                { term: 'CLS (Cumulative Layout Shift)', definition: 'Mesure les sauts de mise en page inattendus pendant le chargement. Un CLS élevé frustre les utilisateurs. Objectif : inférieur à 0,1.' },
-                { term: 'Canonical', definition: 'Balise qui indique à Google quelle est la version « officielle » d\'une page, évitant les problèmes de contenu dupliqué.' },
+                { term: 'robots.txt', definition: "Un fichier à la racine de votre site qui indique aux moteurs de recherche quelles pages explorer ou ignorer. Son absence n'est pas bloquante mais sa présence permet un contrôle précis du crawl." },
+                { term: 'Sitemap XML', definition: 'Un fichier qui liste toutes les pages importantes de votre site. Il aide Google à découvrir vos pages plus rapidement.' },
+                { term: 'llms.txt', definition: "Un fichier émergent qui aide les IA (ChatGPT, Perplexity, etc.) à comprendre votre site. C'est l'équivalent du robots.txt pour les moteurs IA — un avantage compétitif en GEO." },
+                { term: 'HTTPS', definition: 'Protocole sécurisé obligatoire. Google pénalise les sites HTTP depuis 2014.' },
+                { term: 'Contenu mixte', definition: 'Ressources HTTP chargées sur une page HTTPS — déclenche des avertissements navigateurs.' },
               ]}
             />
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Robots.txt</span>
-              {data.robotsTxt.exists ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-error text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Sitemap dans robots</span>
-              {data.sitemap.inRobots ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-error text-xs font-bold">NON</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Sitemap direct</span>
-              {data.sitemap.exists ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-error text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">llms.txt</span>
-              {data.llmsTxt.exists ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-error text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> HTTPS</span>
-              {data.isHttps ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-error text-xs font-bold">NON</span>
-              )}
-            </div>
-            {data.mixedContentCount > 0 && (
-              <div className="flex items-center justify-between p-3 bg-status-warning/5 border border-status-warning/20 rounded-lg">
-                <span className="text-sm text-text-secondary">Contenu mixte</span>
-                <span className="text-status-warning text-sm font-bold">{data.mixedContentCount}</span>
-              </div>
-            )}
-          </div>
+          }
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <CheckPill label="Robots.txt" ok={data.robotsTxt.exists} />
+          <CheckPill label="Sitemap dans robots" ok={!!data.sitemap.inRobots} status={data.sitemap.inRobots ? '✓ OK' : 'NON'} />
+          <CheckPill label="Sitemap direct" ok={data.sitemap.exists} />
+          <CheckPill label="llms.txt" ok={data.llmsTxt.exists} />
+          <CheckPill label="HTTPS" ok={data.isHttps} status={data.isHttps ? '✓ OK' : 'NON'} />
+          {data.mixedContentCount > 0 && (
+            <CheckPill label="Contenu mixte" ok={false} tone="warn" status={`${data.mixedContentCount} fichiers`} />
+          )}
         </div>
+      </section>
 
-        {/* 2. Core Web Vitals (moved up) */}
-        {data.coreWebVitals && (data.coreWebVitals.mobile || data.coreWebVitals.desktop) ? (
-          <div>
-            <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-              <Gauge className="text-text-tertiary" />
-              Core Web Vitals
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCwvStrategy('mobile')}
-                  disabled={!data.coreWebVitals.mobile}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    cwvStrategy === 'mobile'
-                      ? 'bg-surface-tertiary text-text-primary border border-border-primary'
-                      : data.coreWebVitals.mobile
-                        ? 'text-text-quaternary hover:text-text-secondary'
-                        : 'text-text-quaternary/40 cursor-not-allowed'
-                  }`}
-                  title="Mobile"
-                >
-                  <Smartphone className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setCwvStrategy('desktop')}
-                  disabled={!data.coreWebVitals.desktop}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    cwvStrategy === 'desktop'
-                      ? 'bg-surface-tertiary text-text-primary border border-border-primary'
-                      : data.coreWebVitals.desktop
-                        ? 'text-text-quaternary hover:text-text-secondary'
-                        : 'text-text-quaternary/40 cursor-not-allowed'
-                  }`}
-                  title="Desktop"
-                >
-                  <Monitor className="w-4 h-4" />
-                </button>
-              </div>
-              <InfoBox
-                items={[
-                  { term: 'Performance', definition: 'Score global de performance sur 100 calculé par Google Lighthouse. Au-dessus de 90 c\'est excellent, entre 50 et 89 il y a des améliorations à faire, en dessous de 50 c\'est critique.' },
-                  { term: 'LCP (Largest Contentful Paint)', definition: 'Temps d\'affichage du plus grand élément visible (image hero, titre principal). Bon : ≤ 2,5s. À améliorer : 2,5–4s. Mauvais : > 4s. C\'est le critère le plus important pour l\'expérience utilisateur.' },
-                  { term: 'FCP (First Contentful Paint)', definition: 'Temps avant l\'affichage du premier contenu (texte ou image). Bon : ≤ 1,8s. À améliorer : 1,8–3s. Mauvais : > 3s. Un FCP rapide rassure l\'utilisateur que la page se charge.' },
-                  { term: 'CLS (Cumulative Layout Shift)', definition: 'Mesure les décalages visuels inattendus pendant le chargement (boutons qui bougent, images qui poussent le texte). Bon : ≤ 0,1. À améliorer : 0,1–0,25. Mauvais : > 0,25.' },
-                  { term: 'TBT (Total Blocking Time)', definition: 'Temps total pendant lequel la page est bloquée et ne répond pas aux clics. Bon : ≤ 200 ms. À améliorer : 200–600 ms. Mauvais : > 600 ms. Réduisez le JavaScript lourd.' },
-                  { term: 'SI (Speed Index)', definition: 'Vitesse à laquelle le contenu visible se remplit progressivement. Bon : ≤ 3,4s. À améliorer : 3,4–5,8s. Mauvais : > 5,8s. Un bon SI signifie que l\'utilisateur voit du contenu rapidement.' },
-                ]}
-              />
-            </h3>
-            {cwvData ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[
-                  { label: 'Performance', value: cwvData.performance, isScore: true },
-                  { label: 'LCP', value: cwvData.lcp, unit: 'ms', good: 2500, poor: 4000, desc: 'Largest Contentful Paint' },
-                  { label: 'FCP', value: cwvData.fcp, unit: 'ms', good: 1800, poor: 3000, desc: 'First Contentful Paint' },
-                  { label: 'CLS', value: cwvData.cls, unit: '', good: 0.1, poor: 0.25, desc: 'Cumulative Layout Shift' },
-                  { label: 'TBT', value: cwvData.tbt, unit: 'ms', good: 200, poor: 600, desc: 'Total Blocking Time' },
-                  { label: 'SI', value: cwvData.si, unit: 'ms', good: 3400, poor: 5800, desc: 'Speed Index' },
-                ].map((metric) => {
-                  let color: string;
-                  let display: string;
-                  let status: string;
-                  if (metric.isScore) {
-                    color = getScoreColor(metric.value);
-                    display = String(Math.round(metric.value));
-                    status = metric.value >= 90 ? 'Bon' : metric.value >= 50 ? 'À améliorer' : 'Mauvais';
-                  } else {
-                    color = metric.value <= metric.good! ? 'text-status-success' : metric.value <= metric.poor! ? 'text-status-warning' : 'text-status-error';
-                    if (metric.unit === 'ms') {
-                      display = metric.value >= 1000 ? `${(metric.value / 1000).toFixed(1)}s` : `${Math.round(metric.value)} ms`;
-                    } else {
-                      display = metric.value.toFixed(2);
-                    }
-                    status = metric.value <= metric.good! ? 'Bon' : metric.value <= metric.poor! ? 'À améliorer' : 'Mauvais';
-                  }
+      {/* §02 — Core Web Vitals */}
+      <section>
+        <SectionHeader
+          num="02"
+          title="Core Web Vitals"
+          rightSlot={
+            hasCwv ? (
+              <div style={{ display: 'flex', gap: 0, border: '1px solid var(--sa-ink)' }}>
+                {(['mobile', 'desktop'] as const).map((s) => {
+                  const active = cwvStrategy === s;
+                  const enabled = !!data.coreWebVitals?.[s];
                   return (
-                    <div key={metric.label} className="bg-surface-tertiary rounded-xl p-4 text-center border border-border-secondary">
-                      <div className={`text-2xl font-bold mb-1 ${color}`}>{display}</div>
-                      <div className="text-xs text-text-quaternary uppercase tracking-wider mb-1">{metric.label}</div>
-                      {!metric.isScore && (
-                        <div className={`text-xs ${color}`}>
-                          {status}
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      key={s}
+                      onClick={() => enabled && setCwvStrategy(s)}
+                      disabled={!enabled}
+                      className="mono"
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: '0.12em',
+                        textTransform: 'uppercase',
+                        background: active ? 'var(--sa-ink)' : 'var(--sa-cream)',
+                        color: active ? 'var(--sa-cream)' : enabled ? 'var(--sa-ink)' : 'var(--sa-ink-4)',
+                        border: 'none',
+                        cursor: enabled ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      {s}
+                    </button>
                   );
                 })}
               </div>
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-surface-tertiary border border-border-secondary rounded-xl">
-                <span className="text-sm text-text-quaternary">Les données {cwvStrategy === 'mobile' ? 'mobile' : 'desktop'} ne sont pas disponibles.</span>
-              </div>
-            )}
+            ) : null
+          }
+          info={
+            <InfoBox
+              items={[
+                { term: 'Performance', definition: 'Score global sur 100 calculé par Google Lighthouse. >90 excellent, 50-89 améliorable, <50 critique.' },
+                { term: 'LCP', definition: "Largest Contentful Paint — temps d'affichage du plus grand élément. Bon : ≤ 2,5s." },
+                { term: 'FCP', definition: 'First Contentful Paint — temps avant le premier contenu. Bon : ≤ 1,8s.' },
+                { term: 'CLS', definition: 'Cumulative Layout Shift — décalages visuels. Bon : ≤ 0,1.' },
+                { term: 'TBT', definition: "Total Blocking Time — temps où la page ne répond pas. Bon : ≤ 200 ms." },
+                { term: 'SI', definition: 'Speed Index — vitesse de remplissage visuel. Bon : ≤ 3,4s.' },
+              ]}
+            />
+          }
+        />
+        {hasCwv && cwvData ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+            {[
+              { label: 'Performance', value: cwvData.performance, isScore: true },
+              { label: 'LCP', value: cwvData.lcp, unit: 'ms', good: 2500, poor: 4000 },
+              { label: 'FCP', value: cwvData.fcp, unit: 'ms', good: 1800, poor: 3000 },
+              { label: 'CLS', value: cwvData.cls, unit: '',   good: 0.1,  poor: 0.25 },
+              { label: 'TBT', value: cwvData.tbt, unit: 'ms', good: 200,  poor: 600 },
+              { label: 'SI',  value: cwvData.si,  unit: 'ms', good: 3400, poor: 5800 },
+            ].map((m) => {
+              let color: string, display: string, status: string;
+              if (m.isScore) {
+                color = scoreColor(m.value);
+                display = String(Math.round(m.value));
+                status = m.value >= 90 ? 'Bon' : m.value >= 50 ? 'À améliorer' : 'Mauvais';
+              } else {
+                color = metricColor(m.value, m.good!, m.poor!);
+                display = m.unit === 'ms'
+                  ? (m.value >= 1000 ? `${(m.value / 1000).toFixed(1)}s` : `${Math.round(m.value)} ms`)
+                  : m.value.toFixed(2);
+                status = m.value <= m.good! ? 'Bon' : m.value <= m.poor! ? 'À améliorer' : 'Mauvais';
+              }
+              return (
+                <div
+                  key={m.label}
+                  style={{
+                    border: '1px solid var(--sa-rule)',
+                    background: 'var(--sa-cream-2)',
+                    padding: 14,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div className="display tnum" style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>
+                    {display}
+                  </div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-4)', fontWeight: 700, marginBottom: 4 }}>
+                    {m.label}
+                  </div>
+                  {!m.isScore && (
+                    <div className="mono" style={{ fontSize: 10, color, fontWeight: 600, letterSpacing: '0.06em' }}>
+                      {status}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div>
-            <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-              <Gauge className="text-text-tertiary" />
-              Core Web Vitals
-            </h3>
-            {cwvLoading ? (
-              <div className="flex items-center gap-3 p-4 bg-surface-tertiary border border-border-secondary rounded-xl">
-                <Loader2 className="w-4 h-4 animate-spin text-text-tertiary" />
-                <span className="text-sm text-text-tertiary">Analyse PageSpeed en cours...</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-surface-tertiary border border-border-secondary rounded-xl">
-                <span className="text-sm text-text-quaternary">Les données PageSpeed ne sont pas disponibles pour le moment. L&apos;API Google est peut-être surchargée — réessayez dans quelques minutes.</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 3. Issues */}
-        <IssuesList issues={data.issues} />
-
-        {/* 4. CMS, Tech Stack & HTML Size */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-4">
-            <div className="text-xs text-text-quaternary uppercase tracking-wider mb-2">CMS</div>
-            <div className="text-lg font-bold text-text-primary">{data.cms || 'Non détecté'}</div>
-          </div>
-
-          <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-4">
-            <div className="text-xs text-text-quaternary uppercase tracking-wider mb-2">Tech Stack</div>
-            <div className="flex flex-wrap gap-1.5">
-              {data.technologies.length > 0 ? (
-                data.technologies.map((tech) => (
-                  <span key={tech} className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-text-secondary border border-border-secondary">
-                    {tech}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm text-text-quaternary">Aucune détectée</span>
-              )}
+          <MonoCard>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, color: 'var(--sa-ink-3)' }}>
+              {cwvLoading && <Loader2 className="animate-spin" style={{ width: 14, height: 14, color: 'var(--sa-ink-4)' }} />}
+              {cwvLoading
+                ? 'Analyse PageSpeed en cours…'
+                : "Données PageSpeed indisponibles. L'API Google est peut-être surchargée — réessayez dans quelques minutes."}
             </div>
-          </div>
+          </MonoCard>
+        )}
+      </section>
 
-          <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-4">
-            <div className="text-xs text-text-quaternary uppercase tracking-wider mb-2">Taille HTML</div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className={`text-lg font-bold ${htmlOk ? 'text-status-success' : 'text-status-error'}`}>
+      {/* §03 — Issues */}
+      <IssuesList issues={data.issues} />
+
+      {/* §04 — CMS / HTML size */}
+      <section>
+        <SectionHeader num="04" title="Profil du site" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+          <MonoCard caption="CMS détecté">
+            <div style={{ fontSize: 18, fontWeight: 700, color: data.cms ? 'var(--sa-ink)' : 'var(--sa-ink-4)' }}>
+              {data.cms || 'Non détecté'}
+            </div>
+          </MonoCard>
+          <MonoCard caption="Taille HTML">
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+              <span className="display tnum" style={{ fontSize: 22, fontWeight: 800, color: htmlColor, lineHeight: 1 }}>
                 {formatBytes(data.htmlSize)}
               </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${htmlOk ? 'bg-status-success/10 text-status-success' : 'bg-status-error/10 text-status-error'}`}>
+              <span className="mono" style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: htmlColor }}>
                 {htmlOk ? 'OK' : 'TROP GROS'}
               </span>
             </div>
-            <div className="w-full bg-gauge-track h-2 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${htmlOk ? 'bg-status-success' : 'bg-status-error'}`}
-                style={{ width: `${Math.min(100, htmlPercent)}%` }}
-              />
+            <div style={{ position: 'relative', height: 8, background: 'var(--sa-cream-3)', border: '1px solid var(--sa-rule)' }}>
+              <div style={{ height: '100%', width: `${Math.min(100, htmlPercent)}%`, background: htmlColor }} />
             </div>
-            <div className="flex justify-between text-xs text-text-quaternary mt-1">
-              <span>0</span>
-              <span>1 MB</span>
-              <span>2 MB</span>
+            <div className="mono" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--sa-ink-4)', marginTop: 4, letterSpacing: '0.08em' }}>
+              <span>0</span><span>1 MB</span><span>2 MB</span>
             </div>
-          </div>
+          </MonoCard>
         </div>
+      </section>
 
-        {/* 5. Technical tags */}
-        <div>
-          <h4 className="font-semibold text-text-primary mb-4">Balises techniques</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Canonical', value: data.canonical, exists: !!data.canonical },
-              { label: 'Lang', value: data.lang, exists: !!data.lang },
-              { label: 'Viewport', value: data.viewport ? 'Défini' : null, exists: !!data.viewport },
-              { label: 'Charset', value: data.charset, exists: !!data.charset },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-                <div>
-                  <span className="text-sm text-text-secondary">{item.label}</span>
-                  {item.value && <p className="text-xs text-text-quaternary truncate max-w-[120px]">{item.value}</p>}
+      {/* §05 — Technologies détectées (catégorisé) */}
+      <section>
+        <SectionHeader
+          num="05"
+          title="Technologies détectées"
+          info={
+            <InfoBox
+              items={[
+                { term: 'Framework JS', definition: "Bibliothèque JavaScript principale qui pilote l'interface (React, Vue, Angular). Définit l'architecture front-end." },
+                { term: 'Bibliothèques', definition: 'Outils utilitaires (jQuery, Bootstrap, Tailwind, animations). Peuvent alourdir la page si redondants.' },
+                { term: 'Analytics & tracking', definition: 'Outils de mesure (GA, GTM, Meta Pixel, Hotjar). Impactent le RGPD et la performance — vérifier la consentement.' },
+                { term: 'Embeds & widgets', definition: 'Contenus tiers intégrés (vidéos YouTube/Vimeo, cartes Google Maps, chats Intercom). Pas partie du stack mais ralentissent le chargement.' },
+              ]}
+            />
+          }
+        />
+        {techGroups.length === 0 ? (
+          <MonoCard>
+            <div style={{ fontSize: 13, color: 'var(--sa-ink-4)' }}>Aucune technologie détectée dans le HTML statique.</div>
+          </MonoCard>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {techGroups.map(({ category, techs }) => (
+              <div
+                key={category}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '180px 1fr',
+                  gap: 16,
+                  padding: '12px 16px',
+                  border: '1px solid var(--sa-rule)',
+                  background: 'var(--sa-cream-2)',
+                  alignItems: 'start',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, background: CATEGORY_DOT[category], flexShrink: 0 }} />
+                  <span className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--sa-ink-3)', fontWeight: 700 }}>
+                    {CATEGORY_LABELS[category].fr}
+                  </span>
                 </div>
-                {item.exists ? (
-                  <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-border-primary flex-shrink-0" />
-                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {techs.map((t) => (
+                    <span
+                      key={t}
+                      className="mono"
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: '0.04em',
+                        padding: '4px 10px',
+                        border: '1px solid var(--sa-rule)',
+                        background: 'var(--sa-cream)',
+                        color: 'var(--sa-ink)',
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        )}
+      </section>
 
-        {/* 5b. URL Structure */}
-        <div>
-          <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <LinkIcon className="w-4 h-4 text-text-tertiary" />
-            Structure d&apos;URL
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Longueur</span>
-              <span className={`text-sm font-bold ${data.urlStructure.length > 100 ? 'text-status-warning' : 'text-status-success'}`}>
-                {data.urlStructure.length} car.
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Underscores</span>
-              {data.urlStructure.hasUnderscores ? (
-                <span className="text-status-warning text-xs font-bold">OUI</span>
-              ) : (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Majuscules</span>
-              {data.urlStructure.hasUppercase ? (
-                <span className="text-status-warning text-xs font-bold">OUI</span>
-              ) : (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Profondeur</span>
-              <span className={`text-sm font-bold ${data.urlStructure.depth > 4 ? 'text-status-warning' : 'text-status-success'}`}>
-                {data.urlStructure.depth} niv.
-              </span>
-            </div>
-          </div>
+      {/* §06 — Balises techniques */}
+      <section>
+        <SectionHeader num="06" title="Balises techniques" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <CheckPill label="Canonical" ok={!!data.canonical} value={data.canonical} />
+          <CheckPill label="Lang" ok={!!data.lang} value={data.lang} />
+          <CheckPill label="Viewport" ok={!!data.viewport} value={data.viewport ? 'Défini' : null} />
+          <CheckPill label="Charset" ok={!!data.charset} value={data.charset} />
         </div>
+      </section>
 
-        {/* 6. CSS & JS Analysis (collapsible, default collapsed) */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-text-primary">CSS & JavaScript</h4>
+      {/* §07 — URL Structure */}
+      <section>
+        <SectionHeader num="07" title="Structure d'URL" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <CheckPill
+            label="Longueur"
+            ok={data.urlStructure.length <= 100}
+            tone="warn"
+            status={`${data.urlStructure.length} car.`}
+          />
+          <CheckPill label="Underscores" ok={!data.urlStructure.hasUnderscores} tone="warn" status={data.urlStructure.hasUnderscores ? 'OUI' : '✓ OK'} />
+          <CheckPill label="Majuscules" ok={!data.urlStructure.hasUppercase} tone="warn" status={data.urlStructure.hasUppercase ? 'OUI' : '✓ OK'} />
+          <CheckPill
+            label="Profondeur"
+            ok={data.urlStructure.depth <= 4}
+            tone="warn"
+            status={`${data.urlStructure.depth} niv.`}
+          />
+        </div>
+      </section>
+
+      {/* §08 — CSS & JS (collapsible) */}
+      <section>
+        <SectionHeader
+          num="08"
+          title="CSS & JavaScript"
+          rightSlot={
             <button
               onClick={() => setShowCssJs(!showCssJs)}
-              className="text-xs px-3 py-1 rounded-lg bg-surface-tertiary text-text-tertiary hover:text-text-primary transition-colors border border-border-secondary"
+              className="mono"
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                padding: '6px 12px',
+                border: '1px solid var(--sa-ink)',
+                background: 'var(--sa-cream)',
+                color: 'var(--sa-ink)',
+                cursor: 'pointer',
+              }}
             >
               {showCssJs ? 'Masquer' : 'Afficher'}
             </button>
+          }
+        />
+        {showCssJs && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            <MonoCard caption="Analyse CSS">
+              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--sa-ink)', marginBottom: 10 }}>
+                {data.cssAnalysis.total} <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sa-ink-4)' }}>feuilles de style</span>
+              </div>
+              {[
+                ['Styles en ligne', data.cssAnalysis.inline],
+                ['Locales', data.cssAnalysis.local],
+                ['Externes', data.cssAnalysis.external],
+              ].map(([label, value]) => (
+                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--sa-ink-3)', padding: '4px 0' }}>
+                  <span>{label}</span>
+                  <span className="tnum" style={{ fontWeight: 600, color: 'var(--sa-ink)' }}>{value}</span>
+                </div>
+              ))}
+            </MonoCard>
+            <MonoCard caption="Couverture JavaScript">
+              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--sa-ink)', marginBottom: 10 }}>
+                {data.jsAnalysis.total} <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sa-ink-4)' }}>scripts au total</span>
+              </div>
+              {[
+                ['En ligne', data.jsAnalysis.inline, undefined],
+                ['Locaux',  data.jsAnalysis.local, undefined],
+                ['Externes',data.jsAnalysis.external, undefined],
+                ['Bloquants', data.jsAnalysis.blocking, data.jsAnalysis.blocking > 5 ? 'var(--sa-red)' : data.jsAnalysis.blocking > 0 ? 'var(--sa-warn)' : 'var(--sa-ok)'],
+              ].map(([label, value, color]) => (
+                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--sa-ink-3)', padding: '4px 0' }}>
+                  <span>{label}</span>
+                  <span className="tnum" style={{ fontWeight: 700, color: (color as string) ?? 'var(--sa-ink)' }}>{value as number}</span>
+                </div>
+              ))}
+            </MonoCard>
           </div>
-          {showCssJs && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-                  <Code2 className="w-4 h-4 text-text-tertiary" />
-                  Analyse CSS
-                </h4>
-                <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-4">
-                  <div className="text-2xl font-bold text-text-primary mb-3">{data.cssAnalysis.total} <span className="text-sm font-normal text-text-quaternary">Feuilles de style</span></div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Styles en ligne</span>
-                      <span className="text-text-secondary font-medium">{data.cssAnalysis.inline}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Feuilles de style locales</span>
-                      <span className="text-text-secondary font-medium">{data.cssAnalysis.local}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Feuilles de style externes</span>
-                      <span className="text-text-secondary font-medium">{data.cssAnalysis.external}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        )}
+      </section>
 
-              <div>
-                <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-                  <FileCode className="w-4 h-4 text-text-tertiary" />
-                  Couverture JavaScript
-                </h4>
-                <div className="bg-surface-tertiary border border-border-secondary rounded-xl p-4">
-                  <div className="text-2xl font-bold text-text-primary mb-3">{data.jsAnalysis.total} <span className="text-sm font-normal text-text-quaternary">Scripts au total</span></div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Scripts en ligne</span>
-                      <span className="text-text-secondary font-medium">{data.jsAnalysis.inline}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Scripts locaux</span>
-                      <span className="text-text-secondary font-medium">{data.jsAnalysis.local}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Scripts externes</span>
-                      <span className="text-text-secondary font-medium">{data.jsAnalysis.external}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-text-tertiary">Scripts bloquants</span>
-                      <span className={`font-medium ${data.jsAnalysis.blocking > 5 ? 'text-status-error' : data.jsAnalysis.blocking > 0 ? 'text-status-warning' : 'text-status-success'}`}>
-                        {data.jsAnalysis.blocking}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 7. robots.txt content (collapsible) */}
-        {data.robotsTxt.exists && data.robotsTxt.content && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-text-primary">Contenu de robots.txt</h4>
+      {/* §09 — robots.txt content (collapsible, only when present) */}
+      {data.robotsTxt.exists && data.robotsTxt.content && (
+        <section>
+          <SectionHeader
+            num="09"
+            title="Contenu de robots.txt"
+            rightSlot={
               <button
                 onClick={() => setShowRobots(!showRobots)}
-                className="text-xs px-3 py-1 rounded-lg bg-surface-tertiary text-text-tertiary hover:text-text-primary transition-colors border border-border-secondary"
+                className="mono"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  padding: '6px 12px',
+                  border: '1px solid var(--sa-ink)',
+                  background: 'var(--sa-cream)',
+                  color: 'var(--sa-ink)',
+                  cursor: 'pointer',
+                }}
               >
                 {showRobots ? 'Masquer' : 'Afficher'}
               </button>
-            </div>
-            {showRobots && (
-              <pre className="bg-surface-tertiary border border-border-secondary rounded-xl p-4 text-sm text-text-secondary font-mono overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto">
-                {data.robotsTxt.content}
-              </pre>
-            )}
-          </div>
-        )}
+            }
+          />
+          {showRobots && (
+            <pre
+              className="mono"
+              style={{
+                margin: 0,
+                padding: 16,
+                fontSize: 12,
+                lineHeight: 1.5,
+                color: 'var(--sa-ink-2)',
+                background: 'var(--sa-cream-2)',
+                border: '1px solid var(--sa-rule)',
+                whiteSpace: 'pre-wrap',
+                maxHeight: 256,
+                overflowY: 'auto',
+              }}
+            >
+              {data.robotsTxt.content}
+            </pre>
+          )}
+        </section>
+      )}
 
-        {/* Resource Hints */}
-        <div>
-          <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <Wifi className="w-4 h-4 text-text-tertiary" />
-            Resource Hints
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Preconnect', value: data.resourceHints.preconnect },
-              { label: 'Preload', value: data.resourceHints.preload },
-              { label: 'Prefetch', value: data.resourceHints.prefetch },
-              { label: 'DNS-Prefetch', value: data.resourceHints.dnsPrefetch },
-            ].map((hint) => (
-              <div key={hint.label} className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-                <span className="text-sm text-text-secondary">{hint.label}</span>
-                <span className={`text-sm font-bold ${hint.value > 0 ? 'text-status-success' : 'text-text-quaternary'}`}>
-                  {hint.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* HTTP Headers */}
-        <div>
-          <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-text-tertiary" />
-            Headers HTTP
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <div>
-                <span className="text-sm text-text-secondary">X-Robots-Tag</span>
-                {data.httpHeaders.xRobotsTag && (
-                  <p className="text-xs text-text-quaternary truncate max-w-[120px]">{data.httpHeaders.xRobotsTag}</p>
-                )}
-              </div>
-              {data.httpHeaders.xRobotsTag ? (
-                data.httpHeaders.xRobotsTag.toLowerCase().includes('noindex') ? (
-                  <span className="text-status-error text-xs font-bold">NOINDEX</span>
-                ) : (
-                  <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-                )
-              ) : (
-                <span className="text-text-quaternary text-xs">N/A</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Cache-Control</span>
-              {data.httpHeaders.cacheControl ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-warning text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">CSP</span>
-              {data.httpHeaders.contentSecurityPolicy ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-text-quaternary text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">HSTS</span>
-              {data.httpHeaders.strictTransportSecurity ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-text-quaternary text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* PWA / Manifest */}
-        <div>
-          <h4 className="font-semibold text-text-primary mb-4 flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-text-tertiary" />
-            PWA / Manifest
-          </h4>
-          <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg max-w-sm">
-            <div>
-              <span className="text-sm text-text-secondary">manifest.json</span>
-              {data.manifest.href && (
-                <p className="text-xs text-text-quaternary truncate max-w-[200px]">{data.manifest.href}</p>
-              )}
-            </div>
-            {data.manifest.exists ? (
-              <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-            ) : (
-              <span className="text-text-quaternary text-xs font-bold">ABSENT</span>
-            )}
-          </div>
-        </div>
-
-        {/* Accessibility */}
-        <div>
-          <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-            <Accessibility className="text-text-tertiary" />
-            Accessibilité
+      {/* §10 — Resource Hints */}
+      <section>
+        <SectionHeader
+          num="10"
+          title="Resource Hints"
+          info={
             <InfoBox
               items={[
-                { term: 'HTTPS', definition: 'Protocole sécurisé obligatoire pour tout site web moderne. Google pénalise les sites HTTP depuis 2014. HTTPS protège les données des utilisateurs et est un signal de classement.' },
-                { term: 'Contenu mixte', definition: 'Ressources (images, scripts) chargées en HTTP sur une page HTTPS. Cela déclenche des avertissements de sécurité dans les navigateurs et peut bloquer le chargement.' },
-                { term: 'Skip Navigation', definition: 'Lien invisible (visible au focus clavier) qui permet aux utilisateurs de clavier et lecteurs d\'écran de sauter la navigation et aller directement au contenu principal.' },
-                { term: 'Labels de formulaire', definition: 'Chaque champ de formulaire doit avoir un label associé (via l\'attribut for, aria-label ou en englobant l\'input dans un <label>). Essentiel pour les lecteurs d\'écran.' },
+                { term: 'Resource Hints', definition: "Indications dans le <head> qui aident le navigateur à charger plus vite les ressources critiques. Bien dosés, ils accélèrent significativement le rendu." },
+                { term: 'Preconnect', definition: "Établit la connexion TCP/TLS à un domaine tiers avant qu'il soit requis (ex: fonts.googleapis.com, GA). Économise 100-300 ms par origine." },
+                { term: 'Preload', definition: "Force le téléchargement immédiat d'une ressource critique (font, hero image, CSS bloquant). À utiliser avec parcimonie — abuser dégrade la performance." },
+                { term: 'Prefetch', definition: 'Télécharge en basse priorité une ressource probablement nécessaire pour la page suivante. Idéal pour pré-charger la prochaine étape d\'un funnel.' },
+                { term: 'DNS-Prefetch', definition: "Résout le DNS d'un domaine tiers en avance — moins coûteux que preconnect, utile quand vous savez que vous appellerez le domaine sans connaître quand exactement." },
               ]}
             />
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Skip nav</span>
-              {data.accessibility.hasSkipNav ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-warning text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Attr. lang</span>
-              {data.accessibility.hasLangAttribute ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-error text-xs font-bold">ABSENT</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">Labels form</span>
-              {data.accessibility.missingFormLabels === 0 ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-warning text-sm font-bold">{data.accessibility.missingFormLabels} manq.</span>
-              )}
-            </div>
-            <div className="flex items-center justify-between p-3 bg-surface-tertiary border border-border-secondary rounded-lg">
-              <span className="text-sm text-text-secondary">ARIA boutons</span>
-              {data.accessibility.missingButtonLabels === 0 ? (
-                <CheckCircle2 className="text-status-success w-5 h-5 flex-shrink-0" />
-              ) : (
-                <span className="text-status-warning text-sm font-bold">{data.accessibility.missingButtonLabels} manq.</span>
-              )}
-            </div>
-          </div>
+          }
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          {[
+            { label: 'Preconnect',   value: data.resourceHints.preconnect },
+            { label: 'Preload',      value: data.resourceHints.preload },
+            { label: 'Prefetch',     value: data.resourceHints.prefetch },
+            { label: 'DNS-Prefetch', value: data.resourceHints.dnsPrefetch },
+          ].map((hint) => (
+            <CheckPill
+              key={hint.label}
+              label={hint.label}
+              ok={hint.value > 0}
+              tone="warn"
+              status={String(hint.value)}
+            />
+          ))}
         </div>
+      </section>
 
-        <CTABanner variant="inline" />
-      </div>
-    </div>
+      {/* §11 — HTTP Headers */}
+      <section>
+        <SectionHeader
+          num="11"
+          title="Headers HTTP"
+          info={
+            <InfoBox
+              items={[
+                { term: 'Headers HTTP', definition: "Métadonnées renvoyées par votre serveur avec chaque page. Contrôlent l'indexation, la sécurité, le cache et bien d'autres comportements navigateur." },
+                { term: 'X-Robots-Tag', definition: "Équivalent header de la balise meta robots — peut bloquer l'indexation côté serveur. Utile pour les fichiers non-HTML (PDF, images). NOINDEX = page invisible sur Google." },
+                { term: 'Cache-Control', definition: "Indique au navigateur et aux CDN combien de temps garder la page en cache. Sans header, chaque visite redemande tout — performance dégradée." },
+                { term: 'Content-Security-Policy (CSP)', definition: "Liste blanche de sources autorisées pour scripts/styles/images. Empêche les attaques XSS. Recommandé sur tout site moderne." },
+                { term: 'Strict-Transport-Security (HSTS)', definition: "Force le navigateur à utiliser HTTPS pendant N jours. Empêche les attaques de downgrade SSL. Obligatoire pour les sites bancaires/sensibles." },
+              ]}
+            />
+          }
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          {(() => {
+            const xrt = data.httpHeaders.xRobotsTag;
+            const isNoindex = xrt?.toLowerCase().includes('noindex');
+            return (
+              <CheckPill
+                label="X-Robots-Tag"
+                ok={!!xrt && !isNoindex}
+                tone={isNoindex ? 'error' : 'warn'}
+                value={xrt}
+                status={isNoindex ? 'NOINDEX' : xrt ? '✓ OK' : 'N/A'}
+              />
+            );
+          })()}
+          <CheckPill label="Cache-Control" ok={!!data.httpHeaders.cacheControl} tone="warn" />
+          <CheckPill label="CSP" ok={data.httpHeaders.contentSecurityPolicy} tone="warn" />
+          <CheckPill label="HSTS" ok={data.httpHeaders.strictTransportSecurity} tone="warn" />
+        </div>
+      </section>
+
+      {/* §12 — PWA / Manifest */}
+      <section>
+        <SectionHeader
+          num="12"
+          title="PWA / Manifest"
+          info={
+            <InfoBox
+              items={[
+                { term: 'PWA (Progressive Web App)', definition: "Site web installable comme une app native (iOS/Android/desktop). Fonctionne hors ligne, peut envoyer des notifications. Améliore l'engagement utilisateur sans publier sur les stores." },
+                { term: 'manifest.json', definition: "Fichier JSON qui décrit votre app à l'OS : nom, icônes, couleur de thème, mode d'affichage. Sa présence active la prompt « Ajouter à l'écran d'accueil » sur Chrome/Safari mobile." },
+                { term: 'Pourquoi ça compte', definition: "Pour les sites e-commerce/SaaS/médias, l'installation PWA augmente significativement le retention rate. Pour un site vitrine, c'est un nice-to-have — pas critique mais professionnel." },
+              ]}
+            />
+          }
+        />
+        <div style={{ maxWidth: 380 }}>
+          <CheckPill
+            label="manifest.json"
+            ok={data.manifest.exists}
+            tone="warn"
+            value={data.manifest.href ?? null}
+          />
+        </div>
+      </section>
+
+      {/* §13 — Accessibilité */}
+      <section>
+        <SectionHeader
+          num="13"
+          title="Accessibilité"
+          info={
+            <InfoBox
+              items={[
+                { term: 'Skip Navigation', definition: 'Lien invisible (visible au focus clavier) qui permet aux utilisateurs de clavier et lecteurs d\'écran de sauter la navigation.' },
+                { term: 'Attribut lang', definition: "L'attribut lang sur le <html> aide les lecteurs d'écran et améliore l'indexation multilingue." },
+                { term: 'Labels de formulaire', definition: 'Chaque champ doit avoir un label associé. Essentiel pour les lecteurs d\'écran.' },
+              ]}
+            />
+          }
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <CheckPill label="Skip nav" ok={data.accessibility.hasSkipNav} tone="warn" />
+          <CheckPill label="Attr. lang" ok={data.accessibility.hasLangAttribute} />
+          <CheckPill
+            label="Labels formulaire"
+            ok={data.accessibility.missingFormLabels === 0}
+            tone="warn"
+            status={data.accessibility.missingFormLabels === 0 ? '✓ OK' : `${data.accessibility.missingFormLabels} manq.`}
+          />
+          <CheckPill
+            label="ARIA boutons"
+            ok={data.accessibility.missingButtonLabels === 0}
+            tone="warn"
+            status={data.accessibility.missingButtonLabels === 0 ? '✓ OK' : `${data.accessibility.missingButtonLabels} manq.`}
+          />
+        </div>
+      </section>
+
+      <CTABanner variant="inline" />
+    </TabFrame>
   );
 }
