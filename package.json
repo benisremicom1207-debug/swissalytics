@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:live": "node -e \"const fs=require('fs'),{spawnSync}=require('child_process');const env={...process.env,RUN_LIVE_INTEGRATIONS:'1'};fs.readFileSync('.env.local','utf8').split('\\n').forEach(l=>{const m=l.match(/^([A-Z_]+)=(.*)$/);if(m)env[m[1]]=m[2].replace(/^['\\\"]|['\\\"]$/g,'')});process.exit(spawnSync('vitest',['run','src/lib/integrations/'],{env,stdio:'inherit'}).status)\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",

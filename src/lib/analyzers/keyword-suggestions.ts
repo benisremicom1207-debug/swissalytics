@@ -145,6 +145,12 @@ async function callGemini(input: SuggestInput): Promise<KeywordSuggestionsResult
           temperature: 0.4,
           maxOutputTokens: MAX_OUTPUT_TOKENS,
           responseMimeType: 'application/json',
+          // gemini-2.5-flash enables "thinking" by default which consumes
+          // 50-60 tokens BEFORE the JSON output. With our 320-token budget
+          // that left only ~260 for the answer → MAX_TOKENS truncation in
+          // testing. We don't need reasoning here — the prompt is small,
+          // structured, deterministic. Disabling restores full budget.
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
