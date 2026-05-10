@@ -40,9 +40,13 @@ export function GeoTabContent({ report, isFr }: GeoTabContentProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {report.spa && <SpaWarning spa={report.spa} />}
       <IndexationPanel indexation={geo.geo.indexation} isFr={isFr} />
-      <SchemaPanel schema={geo.geo.schema} isFr={isFr} />
-      <EeatPanel eeat={geo.geo.eeat} isFr={isFr} />
       <LighthousePanel lighthouse={geo.seo.lighthouse} isFr={isFr} />
+      <SchemaPanel schema={geo.geo.schema} isFr={isFr} />
+      <EeatPanel
+        eeat={geo.geo.eeat}
+        metaEeat={report.metadata?.eeat}
+        isFr={isFr}
+      />
     </div>
   );
 }
@@ -55,9 +59,9 @@ function GeoEmptyState({ isFr }: { isFr: boolean }) {
   // Réutilise sa-flash + sa-scorecard-scan déjà utilisés par le Scorecard IA-Ready.
   const placeholders = [
     { num: '06', label_fr: 'Indexation IA', label_en: 'AI indexation' },
-    { num: '07', label_fr: 'Schema.org', label_en: 'Schema.org' },
-    { num: '08', label_fr: 'E-E-A-T', label_en: 'E-E-A-T' },
-    { num: '09', label_fr: 'Lighthouse', label_en: 'Lighthouse' },
+    { num: '07', label_fr: 'Lighthouse', label_en: 'Lighthouse' },
+    { num: '08', label_fr: 'Schema.org', label_en: 'Schema.org' },
+    { num: '09', label_fr: 'E-E-A-T', label_en: 'E-E-A-T' },
   ];
 
   return (
@@ -409,7 +413,7 @@ function SchemaPanel({ schema, isFr }: { schema: { score: number; totalFound: nu
   return (
     <section className="frame" style={{ background: 'var(--sa-cream)' }}>
       <PanelHeader
-        num="07"
+        num="08"
         label={isFr ? 'Schema.org' : 'Schema.org'}
         score={schema.score}
         right={
@@ -451,105 +455,249 @@ function SchemaPanel({ schema, isFr }: { schema: { score: number; totalFound: nu
   );
 }
 
-/* ---------------- E-E-A-T panel (P3.3) ---------------- */
+/* ---------------- E-E-A-T panel (P3.3 + dedup with MetadataTab) ---------------- */
 
-function EeatPanel({ eeat, isFr }: { eeat: { score: number; signals: EeatSignals }; isFr: boolean }) {
-  const signals = [
+import type { EEATSignals as MetaEeatSignals } from '@/lib/types';
+
+interface EeatSignal {
+  key: string;
+  label_fr: string;
+  label_en: string;
+  hint_fr: string;
+  hint_en: string;
+  ok: boolean;
+  detail?: string | null;
+}
+
+interface EeatGroup {
+  key: string;
+  label_fr: string;
+  label_en: string;
+  signals: EeatSignal[];
+}
+
+/**
+ * Build the merged signal list from BOTH the geo composite analyzer
+ * (teamPage, testimonials, contactPage, legalMentions) AND the
+ * metadata analyzer (author, dates, contact, privacy, terms). Where
+ * sources overlap (contact, legal), we take an OR — the signal is
+ * "present" if either detector found it.
+ *
+ * Grouped into 5 categories so users see the EEAT picture at a glance:
+ * Identité · Récence · Contact · Légal · Preuves sociales.
+ */
+function buildEeatGroups(
+  geoSignals: EeatSignals,
+  metaEeat: MetaEeatSignals | undefined,
+): EeatGroup[] {
+  return [
     {
-      key: 'teamPage',
-      label_fr: 'Page équipe',
-      label_en: 'Team page',
-      hint_fr: 'Présente les humains derrière le site (Expertise + Trust).',
-      hint_en: 'Shows the humans behind the site (Expertise + Trust).',
-      ok: eeat.signals.teamPage.found,
-      detail: null,
+      key: 'identity',
+      label_fr: 'Identité',
+      label_en: 'Identity',
+      signals: [
+        {
+          key: 'author',
+          label_fr: 'Auteur identifié',
+          label_en: 'Author identified',
+          hint_fr: "Auteur via JSON-LD ou balise dédiée — crucial pour les contenus YMYL.",
+          hint_en: 'Author via JSON-LD or dedicated tag — crucial for YMYL content.',
+          ok: !!metaEeat?.hasAuthor,
+          detail: metaEeat?.authorName ?? null,
+        },
+        {
+          key: 'teamPage',
+          label_fr: 'Page équipe',
+          label_en: 'Team page',
+          hint_fr: 'Présente les humains derrière le site (Expertise + Trust).',
+          hint_en: 'Shows the humans behind the site.',
+          ok: geoSignals.teamPage.found,
+        },
+      ],
     },
     {
-      key: 'legalMentions',
-      label_fr: 'Mentions légales',
-      label_en: 'Legal mentions',
-      hint_fr: 'Obligation légale + signal de fiabilité.',
-      hint_en: 'Legal requirement + trustworthiness signal.',
-      ok: eeat.signals.legalMentions,
-      detail: null,
+      key: 'recency',
+      label_fr: 'Récence',
+      label_en: 'Recency',
+      signals: [
+        {
+          key: 'datePublished',
+          label_fr: 'Date de publication',
+          label_en: 'Publication date',
+          hint_fr: 'Montre que le contenu est daté — Google et IA favorisent la fraîcheur.',
+          hint_en: 'Shows the content is dated — Google and AI favor freshness.',
+          ok: !!metaEeat?.hasPublishedDate,
+          detail: metaEeat?.publishedDate ?? null,
+        },
+        {
+          key: 'dateModified',
+          label_fr: 'Date de modification',
+          label_en: 'Modification date',
+          hint_fr: 'Indique que la page est maintenue à jour.',
+          hint_en: 'Indicates the page is kept up to date.',
+          ok: !!metaEeat?.hasModifiedDate,
+          detail: metaEeat?.modifiedDate ?? null,
+        },
+      ],
     },
     {
-      key: 'contactPage',
-      label_fr: 'Page contact',
-      label_en: 'Contact page',
-      hint_fr: 'Permet aux IA de citer un point de contact vérifiable.',
-      hint_en: 'Allows AI to cite a verifiable contact.',
-      ok: eeat.signals.contactPage.found,
-      detail: null,
+      key: 'contact',
+      label_fr: 'Contact',
+      label_en: 'Contact',
+      signals: [
+        {
+          key: 'contactPage',
+          label_fr: 'Page / lien contact',
+          label_en: 'Contact page or link',
+          hint_fr: 'Point de contact vérifiable — augmente la citabilité par les IA.',
+          hint_en: 'Verifiable contact point — increases AI-citability.',
+          // OR: either source counts as a contact signal.
+          ok: geoSignals.contactPage.found || !!metaEeat?.hasContactLink,
+        },
+      ],
     },
     {
-      key: 'testimonials',
-      label_fr: 'Témoignages',
-      label_en: 'Testimonials',
-      hint_fr: 'Reviews/avis renforcent l’autorité et la crédibilité.',
-      hint_en: 'Reviews/testimonials reinforce authority and credibility.',
-      ok: eeat.signals.testimonials.found,
-      detail: eeat.signals.testimonials.count > 0
-        ? `${eeat.signals.testimonials.count} ${isFr ? 'détecté(s)' : 'detected'}`
-        : null,
+      key: 'legal',
+      label_fr: 'Légal & confidentialité',
+      label_en: 'Legal & privacy',
+      signals: [
+        {
+          key: 'privacy',
+          label_fr: 'Politique de confidentialité',
+          label_en: 'Privacy policy',
+          hint_fr: 'Obligatoire en Europe (RGPD). Son absence pénalise la confiance.',
+          hint_en: 'Required in EU (GDPR). Absence hurts trust.',
+          ok: !!metaEeat?.hasPrivacyPolicy,
+        },
+        {
+          key: 'terms',
+          label_fr: 'Mentions légales / CGU',
+          label_en: 'Legal notice / ToS',
+          hint_fr: "Obligation légale CH/EU + signal de fiabilité pour Google et IA.",
+          hint_en: 'CH/EU legal requirement + trust signal for Google and AI.',
+          // OR: either GEO's "legalMentions" content scan or Metadata's terms link counts.
+          ok: geoSignals.legalMentions || !!metaEeat?.hasTermsOfService,
+        },
+      ],
     },
-  ] as const;
+    {
+      key: 'social',
+      label_fr: 'Preuves sociales',
+      label_en: 'Social proof',
+      signals: [
+        {
+          key: 'testimonials',
+          label_fr: 'Témoignages / avis',
+          label_en: 'Testimonials / reviews',
+          hint_fr: "Reviews et avis renforcent l'autorité et la crédibilité de la marque.",
+          hint_en: 'Reviews and testimonials reinforce brand authority and credibility.',
+          ok: geoSignals.testimonials.found,
+          detail:
+            geoSignals.testimonials.count > 0
+              ? `${geoSignals.testimonials.count} détecté(s)`
+              : null,
+        },
+      ],
+    },
+  ];
+}
+
+function EeatPanel({
+  eeat,
+  metaEeat,
+  isFr,
+}: {
+  eeat: { score: number; signals: EeatSignals };
+  metaEeat?: MetaEeatSignals;
+  isFr: boolean;
+}) {
+  const groups = buildEeatGroups(eeat.signals, metaEeat);
+  const allSignals = groups.flatMap((g) => g.signals);
+  const okCount = allSignals.filter((s) => s.ok).length;
 
   return (
     <section className="frame" style={{ background: 'var(--sa-cream)' }}>
       <PanelHeader
-        num="08"
+        num="09"
         label="E-E-A-T"
         score={eeat.score}
         right={
           <span>
-            {signals.filter((s) => s.ok).length}/{signals.length}{' '}
+            {okCount}/{allSignals.length}{' '}
             {isFr ? 'signaux présents' : 'signals present'}
           </span>
         }
       />
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-        }}
-      >
-        {signals.map((s) => (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {groups.map((group, gi) => (
           <div
-            key={s.key}
+            key={group.key}
             style={{
-              padding: '20px',
-              borderTop: '2px solid var(--sa-ink)',
-              borderRight: '2px solid var(--sa-ink)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-              minHeight: 140,
+              borderTop: gi === 0 ? '2px solid var(--sa-ink)' : '1px solid var(--sa-rule)',
+              padding: '16px 20px',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--sa-ink)' }}>
-                {isFr ? s.label_fr : s.label_en}
-              </span>
-              <StatusBadge ok={s.ok} isFr={isFr} />
+            <div
+              className="mono"
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--sa-ink-4)',
+                fontWeight: 700,
+                marginBottom: 14,
+              }}
+            >
+              § {isFr ? group.label_fr : group.label_en}
             </div>
-            <span style={{ fontSize: 13, color: 'var(--sa-ink-3)', lineHeight: 1.4 }}>
-              {isFr ? s.hint_fr : s.hint_en}
-            </span>
-            {s.detail && (
-              <span
-                className="mono"
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'var(--sa-ink-4)',
-                  marginTop: 'auto',
-                }}
-              >
-                {s.detail}
-              </span>
-            )}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: 12,
+              }}
+            >
+              {group.signals.map((s) => (
+                <div
+                  key={s.key}
+                  style={{
+                    padding: '14px 16px',
+                    border: `1px solid ${s.ok ? 'var(--sa-ok)' : 'var(--sa-rule)'}`,
+                    background: s.ok ? 'rgba(47, 107, 63, 0.04)' : 'var(--sa-cream-2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--sa-ink)', lineHeight: 1.3 }}>
+                      {isFr ? s.label_fr : s.label_en}
+                    </span>
+                    <StatusBadge ok={s.ok} isFr={isFr} />
+                  </div>
+                  <span style={{ fontSize: 12, color: 'var(--sa-ink-3)', lineHeight: 1.45 }}>
+                    {isFr ? s.hint_fr : s.hint_en}
+                  </span>
+                  {s.detail && (
+                    <span
+                      className="mono"
+                      style={{
+                        fontSize: 10,
+                        letterSpacing: '0.06em',
+                        color: 'var(--sa-ink-4)',
+                        marginTop: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={s.detail}
+                    >
+                      {s.detail}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -573,7 +721,7 @@ function LighthousePanel({ lighthouse, isFr }: { lighthouse: LighthouseScores; i
   return (
     <section className="frame" style={{ background: 'var(--sa-cream)' }}>
       <PanelHeader
-        num="09"
+        num="07"
         label="Lighthouse"
         score={avg}
         right={
