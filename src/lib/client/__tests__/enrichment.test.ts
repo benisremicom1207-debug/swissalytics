@@ -204,6 +204,17 @@ describe('fetchKeywordSuggestions (P18.B)', () => {
     expect(body.pageContext).toEqual(ctx);
   });
 
+  it('P19: forwards uiLang in the body so rationale can localize separately', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ keywordSuggestions: null }),
+    });
+    await fetchKeywordSuggestions('https://x', ctx, 'fr');
+    const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    const body = JSON.parse(init.body);
+    expect(body.uiLang).toBe('fr');
+  });
+
   it('returns null on HTTP non-ok (e.g. 429 rate-limited)', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, status: 429, json: async () => ({}) });
     expect(await fetchKeywordSuggestions('https://x', ctx)).toBeNull();

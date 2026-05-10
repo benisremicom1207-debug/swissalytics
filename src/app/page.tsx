@@ -100,8 +100,10 @@ export default function HomePage() {
 
       // P18.B — keyword suggestions in their own request, runs in parallel
       // with /api/geo-analyze so they appear in 5-10s instead of 27s.
+      // P19 — pass `lang` (UI lang from useTheme) so rationales are written
+      // in the user's language even when the analyzed page is in another.
       setKeywordSuggestionsLoading(true);
-      fetchKeywordSuggestions(validatedUrl, buildPageContext(report))
+      fetchKeywordSuggestions(validatedUrl, buildPageContext(report), lang)
         .then((ks) => {
           if (!ks) return;
           setResult((prev) => (prev ? { ...prev, keywordSuggestions: ks } : prev));

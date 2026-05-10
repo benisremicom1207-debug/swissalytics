@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
       h1?: string;
       schemaKeywords?: SchemaKeywords;
     } | undefined = body?.pageContext ?? undefined;
+    // P19 — UI language (FR/EN) of the Swissalytics user, separate from
+    // the analyzed page's lang. Drives rationale language only.
+    const uiLang: string | undefined = typeof body?.uiLang === 'string' ? body.uiLang : undefined;
 
     if (!rawUrl) {
       return NextResponse.json({ error: 'URL requise' }, { status: 400, headers: CORS });
@@ -88,6 +91,7 @@ export async function POST(request: NextRequest) {
       suggestSeoKeywords({
         url: validatedUrl,
         lang: pageContext?.lang ?? 'fr',
+        uiLang,
         title: pageContext?.title,
         metaDescription: pageContext?.metaDescription,
         h1: pageContext?.h1,

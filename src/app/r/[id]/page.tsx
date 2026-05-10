@@ -74,9 +74,10 @@ export default function ReportPage({
         }
 
         // P18.B — fetch keyword suggestions if missing in stored report.
+        // P19 — pass UI lang for rationale localization separate from page lang.
         if (!r.keywordSuggestions) {
           setKeywordSuggestionsLoading(true);
-          fetchKeywordSuggestions(r.url, buildPageContext(r))
+          fetchKeywordSuggestions(r.url, buildPageContext(r), lang)
             .then((ks) => {
               if (cancelled || !ks) return;
               setState((s) =>
@@ -127,7 +128,7 @@ export default function ReportPage({
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, lang]);
 
   if (state.status === 'loading') {
     return (

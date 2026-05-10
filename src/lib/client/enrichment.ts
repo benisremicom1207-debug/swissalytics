@@ -92,12 +92,13 @@ export async function fetchGeo(
 export async function fetchKeywordSuggestions(
   url: string,
   pageContext: PageContext,
+  uiLang?: string,
 ): Promise<KeywordSuggestionsResult | null> {
   try {
     const res = await fetch('/api/keyword-suggestions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, pageContext }),
+      body: JSON.stringify({ url, pageContext, uiLang }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { keywordSuggestions: KeywordSuggestionsResult | null };

@@ -55,16 +55,41 @@ describe('languageName', () => {
 /* --------------- buildPrompt --------------- */
 
 describe('buildPrompt', () => {
-  it('forces rationale in the page language (FR)', () => {
+  it('uiLang absent → falls back to page lang (rétrocompat)', () => {
     const p = buildPrompt({ url: 'https://x', lang: 'fr' });
     expect(p).toContain('Page language: French');
-    expect(p).toContain('IN THE PAGE LANGUAGE (French)');
-    expect(p).toContain('rationale IN THE PAGE LANGUAGE (French)');
+    expect(p).toContain('KEYWORDS must be written IN FRENCH');
+    expect(p).toContain('RATIONALES must be written IN FRENCH');
   });
 
-  it('forces rationale in DE for a German page', () => {
+  it('uiLang absent + page=DE → output in German', () => {
     const p = buildPrompt({ url: 'https://x', lang: 'de' });
-    expect(p).toContain('rationale IN THE PAGE LANGUAGE (German)');
+    expect(p).toContain('KEYWORDS must be written IN GERMAN');
+    expect(p).toContain('RATIONALES must be written IN GERMAN');
+  });
+
+  it('P19: page=EN-US + uiLang=FR → output 100% French (the enigma.swiss case)', () => {
+    const p = buildPrompt({ url: 'https://enigma.swiss/', lang: 'en-US', uiLang: 'fr' });
+    // HTML lang is surfaced as a hint (« may be misdeclared »), not as the source of truth
+    expect(p).toContain('HTML lang attribute: English');
+    expect(p).toContain('targeting the French market');
+    expect(p).toContain('KEYWORDS must be written IN FRENCH');
+    expect(p).toContain('RATIONALES must be written IN FRENCH');
+    expect(p).toContain('NEVER mix languages');
+  });
+
+  it('P19: page=FR + uiLang=EN → output 100% English', () => {
+    const p = buildPrompt({ url: 'https://x', lang: 'fr-CH', uiLang: 'en' });
+    expect(p).toContain('HTML lang attribute: French');
+    expect(p).toContain('targeting the English market');
+    expect(p).toContain('KEYWORDS must be written IN ENGLISH');
+    expect(p).toContain('RATIONALES must be written IN ENGLISH');
+  });
+
+  it('P19: page lang === uiLang → no mismatch warning, just plain "Page language: X"', () => {
+    const p = buildPrompt({ url: 'https://x', lang: 'fr', uiLang: 'fr' });
+    expect(p).toContain('Page language: French');
+    expect(p).not.toContain('may be misdeclared');
   });
 
   it('injects Schema.org context block when found', () => {
